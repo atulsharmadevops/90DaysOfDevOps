@@ -92,6 +92,12 @@ Create `day-19-project.md` with:
 
 ---
 
+## Reference Video
+
+[![Watch the video](https://img.youtube.com/vi/PZYJ33bMXAw/0.jpg)](https://youtu.be/PZYJ33bMXAw?si=RzEzOSom7-FqnopA)
+
+---
+
 ## Learn in Public
 
 Share your shell scripting projects on LinkedIn.
