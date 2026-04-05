@@ -841,8 +841,8 @@ All services are processes, but not all processes are services.
 
 ---
 
-**3. How do you find which process is using port 8080?**
-
+**3. How do you find which process is using port 8080?**<br>
+**Ans.**
 ```bash
 ss -tulnp | grep :8080
 # or
