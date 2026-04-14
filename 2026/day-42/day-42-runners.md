@@ -190,7 +190,7 @@ name: Self-Hosted Runner Demo
 on: [push]
 
 jobs:
-  demo:
+  demo:   # <-- this is the job identifier
     runs-on: self-hosted
     steps:
       - name: Print hostname
