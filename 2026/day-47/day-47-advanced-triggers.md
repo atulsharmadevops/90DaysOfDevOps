@@ -28,9 +28,10 @@ jobs:
         if: github.event.pull_request.merged == true
         run: echo "This PR was merged!"
 ```
+- Conditional `if: github.event.pull_request.merged == true` ensures the merged message only prints for successful merges.
 ### Test the Workflow
 Push Workflow to Default Branch
-- Commit and push the workflow file to your repo’s default branch (`main` or `master`).
+- Commit and push the workflow file to our repo’s default branch (`main` or `master`).
   ```bash
   git add .github/workflows/pr-lifecycle.yml
   git commit -m "Add PR Lifecycle Events workflow"
@@ -105,7 +106,7 @@ Reopen Event
 
 - Then click **Reopen pull request**.
   - This action fires the `reopened` event in our workflow.
-- In the **Actions tab → PR Lifecycle Events → Run details**, we’ll see logs like:
+- In the **Actions tab --> PR Lifecycle Events --> Run details**, we’ll see logs like:
   
   ![image alt](https://github.com/atulsharmadevops/90DaysOfDevOps/blob/83aa9e80b1d728ed8b60eb9e0238fa6d04550070/2026/day-47/Screenshots/Screenshot%20(487).png)
 
@@ -127,7 +128,6 @@ Closed + Merged Event
 - **synchronize** ---> when commits are pushed to the PR branch.
 - **reopened** ---> when a closed PR is reopened.
 - **closed** ---> when a PR is closed (merged or not).
-- Conditional `if: github.event.pull_request.merged == true` ensures the merged message only prints for successful merges.
 
 ## Task 2: PR Validation Workflow
 ### Create the Workflow File `.github/workflows/pr-validation.yml`
