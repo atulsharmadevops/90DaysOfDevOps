@@ -115,12 +115,12 @@ docker stop myapp && docker rm myapp
 name: Reusable Build & Test
 
 on:
-  workflow_call:      #makes this workflow reusable - other workflows can call it
+  workflow_call:                        #makes this workflow reusable - other workflows can call it
     inputs:                             #parameters passed in by caller
       python_version:                   #required string (e.g., "3.10")
         required: true
         type: string
-      run_tests:                      #optional boolean, defaults to true
+      run_tests:                        #optional boolean, defaults to true
         required: false
         type: boolean
         default: true
@@ -128,35 +128,35 @@ on:
 jobs:
   build-test:
     runs-on: ubuntu-latest
-    outputs:                          #exposes job outputs to caller workflow
-      test_result: ${{ steps.set-result.outputs.test_result }}  #it maps job’s test_result to step set-result’s output.
+    outputs:                                                      #exposes job outputs to caller workflow
+      test_result: ${{ steps.set-result.outputs.test_result }}    #it maps job’s test_result to step set-result’s output.
     steps:
       - name: Checkout code
-        uses: actions/checkout@v3     #checks out our repo code so subsequent steps can access it
+        uses: actions/checkout@v3                                 #checks out our repo code so subsequent steps can access it
 
       - name: Set up Python
-        if: ${{ inputs.python_version }}  #conditionally runs if python_version input is provided
-        uses: actions/setup-python@v4     #uses official action to install specified Python version
+        if: ${{ inputs.python_version }}                          #conditionally runs if python_version input is provided
+        uses: actions/setup-python@v4                             #uses official action to install specified Python version
         with:
           python-version: ${{ inputs.python_version }}
 
       - name: Install dependencies
-        run: pip install -r requirements.txt    #installs dependencies listed in requirements.txt
+        run: pip install -r requirements.txt                      #installs dependencies listed in requirements.txt
 
       - name: Run tests
-        if: ${{ inputs.run_tests }}   #runs only if run_tests is true
+        if: ${{ inputs.run_tests }}                               #runs only if run_tests is true
         run: |
-          set -e      #ensures script exits immediately if any command fails
-          pytest      #it automatically discovers test files (named test_*.py or *_test.py) --> runs functions inside them --> reports results (pass/fail --> exits with a status code that CI/CD systems can use
+          set -e                                                  #ensures script exits immediately if any command fails
+          pytest                                                  #it automatically discovers test files (named test_*.py or *_test.py) --> runs functions inside them --> reports results (pass/fail --> exits with a status code that CI/CD systems can use
 
       - name: Set result output
-        id: set-result        #defines a step with id: set-result so its outputs can be referenced
+        id: set-result                                            #defines a step with id: set-result so its outputs can be referenced
         run: |
           if [ "${{ inputs.run_tests }}" = "true" ]; then
             echo "test_result=passed" >> $GITHUB_OUTPUT
           else
             echo "test_result=skipped" >> $GITHUB_OUTPUT
-          fi      #this value is then exposed as job output (${{ steps.set-result.outputs.test_result }})
+          fi                                                      #this value is then exposed as job output (${{ steps.set-result.outputs.test_result }})
 ```
 - This workflow does NOT deploy — it only builds and tests.
 
@@ -172,12 +172,12 @@ Create `.github/workflows/reusable-docker.yml`:
 name: Reusable Docker Build & Push
 
 on:
-  workflow_call:    #makes this workflow reusable - other workflows can call it
+  workflow_call:                                                                             #makes this workflow reusable - other workflows can call it
     inputs:
-      image_name:   #docker image name (e.g., atulsharmadochub/myapp)
+      image_name:                                                                            #docker image name (e.g., atulsharmadochub/myapp)
         required: true
         type: string
-      tag:          #tag (e.g., latest or sha-12345)
+      tag:                                                                                   #tag (e.g., latest or sha-12345)
         required: true
         type: string
     secrets:
@@ -189,13 +189,13 @@ on:
 jobs:
   docker-build-push:
     runs-on: ubuntu-latest
-    outputs:          #exposes 'image_url' to caller workflow, wired to step 'set-output'
+    outputs:                                                                                   #exposes 'image_url' to caller workflow, wired to step 'set-output'
       image_url: ${{ steps.set-output.outputs.image_url }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
 
-      - name: Log in to Docker Hub    #ensures runner can push images to our account
+      - name: Log in to Docker Hub                                                             #ensures runner can push images to our account
         uses: docker/login-action@v2
         with:
           username: ${{ secrets.docker_username }}
@@ -204,12 +204,12 @@ jobs:
       - name: Build and push Docker image
         uses: docker/build-push-action@v4
         with:
-          context: .            #build from current directory
-          push: true            #push image to Docker Hub
-          tags: ${{ inputs.image_name }}:${{ inputs.tag }}    #applies tag (e.g., atulsharmadochub/myapp:latest).
+          context: .                                                                            #build from current directory
+          push: true                                                                            #push image to Docker Hub
+          tags: ${{ inputs.image_name }}:${{ inputs.tag }}                                      #applies tag (e.g., atulsharmadochub/myapp:latest).
 
-      - name: Set image URL output    #this job maps this to its own output so caller workflow can use it
-        id: set-output    #defines a step with id: set-output
+      - name: Set image URL output                                                              #this job maps this to its own output so caller workflow can use it
+        id: set-output                                                                          #defines a step with id: set-output
         run: echo "image_url=${{ inputs.image_name }}:${{ inputs.tag }}" >> $GITHUB_OUTPUT      #this makes steps.set-output.outputs.image_url available
 
 ```
@@ -219,22 +219,22 @@ jobs:
 name: PR Pipeline
 
 on:
-  pull_request:     #runs when a pull request event occurs
-    branches: [ main ]      #only triggers if PR targets main branch
-    types: [opened, synchronize]  #runs when PR is opened or PR is synchronized (updated with new commits)
+  pull_request:                                                          #runs when a pull request event occurs
+    branches: [ main ]                                                   #only triggers if PR targets main branch
+    types: [opened, synchronize]                                         #runs when PR is opened or PR is synchronized (updated with new commits)
 
 jobs:
   # Call the reusable build-test workflow
-  build-test:         #this job validates PR code by building and testing it
-    uses: ./.github/workflows/reusable-build-test.yml   #calls our reusable-build-test workflow
+  build-test:                                                            #this job validates PR code by building and testing it
+    uses: ./.github/workflows/reusable-build-test.yml                    #calls our reusable-build-test workflow
     with:
       python_version: "3.10"
-      run_tests: true   #runs test suite
+      run_tests: true                                                    #runs test suite
 
   # Add a standalone job for PR summary
   pr-comment:
     runs-on: ubuntu-latest
-    needs: build-test   #waits until build-test job finishes successfully
+    needs: build-test                                                     #waits until build-test job finishes successfully
     steps:
       - name: Print PR summary
         run: echo "PR checks passed for branch: ${{ github.head_ref }}"   #(github.head_ref) - the source branch of the PR 
@@ -282,7 +282,7 @@ jobs:
 name: Main Branch Pipeline
 
 on:
-  push:   #this ensures only production‑ready code triggers pipeline
+  push:                                                                                               #this ensures only production‑ready code triggers pipeline
     branches: [ main ]
 
 jobs:
@@ -295,31 +295,31 @@ jobs:
 
   # Job 2: Docker Build & Push (depends on build-test)
   docker-build-push:
-    needs: build-test   #runs only after build-test passes
-    uses: ./.github/workflows/reusable-docker.yml   #calls our reusable-docker.yml workflow
+    needs: build-test                                                                                  #runs only after build-test passes
+    uses: ./.github/workflows/reusable-docker.yml                                                      #calls our reusable-docker.yml workflow
     with:
       image_name: atulsharmadochub/myapp
-      tag: latest   #builds and pushes image tagged latest to Docker Hub
+      tag: latest                                                                                      #builds and pushes image tagged latest to Docker Hub
     secrets:
       docker_username: ${{ secrets.DOCKER_USERNAME }}
       docker_token: ${{ secrets.DOCKER_TOKEN }}
 
   # Job 2b: Push with short SHA tag
   docker-build-push-sha:
-    needs: build-test     #runs only after build-test passes
-    uses: ./.github/workflows/reusable-docker.yml   #calls our reusable-docker.yml workflow
+    needs: build-test                                                                                   #runs only after build-test passes
+    uses: ./.github/workflows/reusable-docker.yml                                                       #calls our reusable-docker.yml workflow
     with:
       image_name: atulsharmadochub/myapp
-      tag: sha-${{ github.sha }}    #builds and pushes same image but tagged with commit SHA - this gives us a unique version per commit for traceability
+      tag: sha-${{ github.sha }}                                                                        #builds and pushes same image but tagged with commit SHA - this gives us a unique version per commit for traceability
     secrets:
       docker_username: ${{ secrets.DOCKER_USERNAME }}
       docker_token: ${{ secrets.DOCKER_TOKEN }}
 
   # Job 3: Deploy (depends on Docker jobs)
-  deploy:         #echoes image URL from docker-build-push job
+  deploy:                                                                                               #echoes image URL from docker-build-push job
     runs-on: ubuntu-latest
-    needs: [docker-build-push, docker-build-push-sha]   #runs only after both Docker jobs succeed
-    environment: production   #marks job as targeting production environment
+    needs: [docker-build-push, docker-build-push-sha]                                                   #runs only after both Docker jobs succeed
+    environment: production                                                                             #marks job as targeting production environment
     steps:
       - name: Deploy to production
         run: echo "Deploying image: ${{ needs.docker-build-push.outputs.image_url }} to production"     #right now it’s just a placeholder — in a real pipeline, we’d replace this with deployment commands (e.g., kubectl apply, docker service update, etc.)
@@ -346,8 +346,8 @@ name: Scheduled Health Check
 
 on:
   schedule:
-    - cron: '0 */12 * * *'   # every 12 hours
-  workflow_dispatch:          # manual trigger
+    - cron: '0 */12 * * *'                                                 # every 12 hours
+  workflow_dispatch:                                                       # manual trigger
 
 jobs:
   health-check:
@@ -365,10 +365,10 @@ jobs:
       - name: Curl health endpoint
         id: curl
         run: |
-          if curl -s http://localhost:5000/health | grep -q "ok"; then  #hits /health endpoint on running container
-            echo "status=PASSED" >> $GITHUB_OUTPUT    #if response contains "ok", sets status=PASSED otherwise status=FAILED
+          if curl -s http://localhost:5000/health | grep -q "ok"; then     #hits /health endpoint on running container
+            echo "status=PASSED" >> $GITHUB_OUTPUT                         #if response contains "ok", sets status=PASSED otherwise status=FAILED
           else
-            echo "status=FAILED" >> $GITHUB_OUTPUT    #writes result to $GITHUB_OUTPUT so later steps can use it
+            echo "status=FAILED" >> $GITHUB_OUTPUT                         #writes result to $GITHUB_OUTPUT so later steps can use it
           fi
 
       - name: Stop and remove container
@@ -376,7 +376,7 @@ jobs:
           docker stop myapp
           docker rm myapp
 
-      - name: Write summary     #writes a Markdown summary to GitHub Actions job summary which is visible in Actions run details
+      - name: Write summary                                                #writes a Markdown summary to GitHub Actions job summary which is visible in Actions run details
         run: |
           echo "## Health Check Report" >> $GITHUB_STEP_SUMMARY
           echo "- Image: atulsharmadochub/myapp:latest" >> $GITHUB_STEP_SUMMARY
@@ -448,7 +448,7 @@ jobs:
       docker_token: ${{ secrets.DOCKER_TOKEN }}
 
   security-scan:
-    needs: docker-build-push    # runs only after Docker image has been built and pushed
+    needs: docker-build-push                                # runs only after Docker image has been built and pushed
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
@@ -457,21 +457,21 @@ jobs:
       - name: Run Trivy vulnerability scanner
         uses: aquasecurity/trivy-action@v0.36.0
         with:
-          image-ref: atulsharmadochub/myapp:latest   #scans pushed Docker image
-          format: 'table'     #outputs results in a human‑readable table
-          exit-code: '1'      #if CRITICAL vulnerabilities are found, the job fails
-          severity: 'CRITICAL'  #only reports critical issues
-          output: trivy-report.txt    #saves report to a file
+          image-ref: atulsharmadochub/myapp:latest          #scans pushed Docker image
+          format: 'table'                                   #outputs results in a human‑readable table
+          exit-code: '1'                                    #if CRITICAL vulnerabilities are found, the job fails
+          severity: 'CRITICAL'                              #only reports critical issues
+          output: trivy-report.txt                          #saves report to a file
 
       - name: Upload Trivy scan report
-        uses: actions/upload-artifact@v4  #attaches report to workflow run so we can download it later
+        uses: actions/upload-artifact@v4                    #attaches report to workflow run so we can download it later
         with:
           name: trivy-report
           path: trivy-report.txt
 
   deploy:
     runs-on: ubuntu-latest
-    needs: [docker-build-push, security-scan]   #deploy only happens if both Docker build and security scan succeed
+    needs: [docker-build-push, security-scan]                #deploy only happens if both Docker build and security scan succeed
     environment: production
     steps:
       - name: Deploy to production
