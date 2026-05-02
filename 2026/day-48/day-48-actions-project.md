@@ -16,11 +16,44 @@ if __name__ == "__main__":
 ```
 ### Add requirements.txt:
 ```code
-flask==2.2.5
+Flask==3.0.3    #AttributeError: module 'werkzeug' has no attribute '__version__'
+pytest
+```
+**Create a Virtual Environment**
+```bash
+python3 -m venv venv
+```
+- This creates a folder `venv/` with its own Python + pip.
+
+**Activate the Virtual Environment**
+```bash
+source venv/bin/activate
+```
+- We should see `(venv)` at the start of our shell prompt.
+
+**Install Requirements**
+```bash
+pip install -r requirements.txt
+```
+- Now it will install Flask (and any other dependencies) inside the virtual environment without touching system Python.
+
+**Run Our App**
+```bash
+python app.py
+```
+Then test:
+```bash
+curl http://localhost:5000/health
+```
+Expected:
+```json
+{"status":"ok"}
+```
+**Deactivate When Done**
+```bash
+deactivate
 ```
 ### Add `Dockerfile`:
-File: `Dockerfile`
-
 ```dockerfile
 # Use lightweight Python image
 FROM python:3.10-slim
@@ -40,51 +73,54 @@ EXPOSE 5000
 # Run the app
 CMD ["python", "app.py"]
 ```
-### Add Basic Test Script
-File: `test.sh`
+**Build and run the container**
 ```bash
-#!/bin/bash
-set -e
-
-# Start container
 docker build -t myapp:latest .
 docker run -d -p 5000:5000 --name myapp myapp:latest
-
-# Wait for app to start
 sleep 5
-
-# Test health endpoint
-STATUS=$(curl -s http://localhost:5000/health | grep -o "ok")
-
-if [ "$STATUS" == "ok" ]; then
-  echo "Health check PASSED"
-else
-  echo "Health check FAILED"
-  exit 1
-fi
-
-# Cleanup
-docker stop myapp
-docker rm myapp
+curl http://localhost:5000/health
 ```
-Make it executable:
+**Expected output**
+```json
+{"status":"ok"}
+```
+**Then clean up**
 ```bash
-chmod +x test.sh
+docker stop myapp && docker rm myapp
 ```
-### Add a `README.md` with a brief project description and a placeholder for badges.
+**Add a minimal test file so the workflow has something to run**
+  ```python
+  # tests/test_app.py
+  import json
+  import sys
+  import os
+
+  # Add repo root to sys.path
+  sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
+
+  from app import app
+
+  def test_health_endpoint():
+      client = app.test_client()
+      response = client.get("/health")
+      data = json.loads(response.data)
+      assert response.status_code == 200
+      assert data["status"] == "ok"
+  ```
+  - Commit this under `tests/` and push. Now `pytest` will pass.
 
 ## Task 2: Reusable Workflow — Build & Test
-Create `.github/workflows/reusable-build-test.yml`:
+**Create `.github/workflows/reusable-build-test.yml`:**
 ```yaml
 name: Reusable Build & Test
 
 on:
-  workflow_call:
-    inputs:
-      python_version:
+  workflow_call:      #makes this workflow reusable - other workflows can call it
+    inputs:                             #parameters passed in by caller
+      python_version:                   #required string (e.g., "3.10")
         required: true
         type: string
-      run_tests:
+      run_tests:                      #optional boolean, defaults to true
         required: false
         type: boolean
         default: true
@@ -92,52 +128,56 @@ on:
 jobs:
   build-test:
     runs-on: ubuntu-latest
-    outputs:
-      test_result: ${{ steps.set-result.outputs.test_result }}
+    outputs:                          #exposes job outputs to caller workflow
+      test_result: ${{ steps.set-result.outputs.test_result }}  #it maps job’s test_result to step set-result’s output.
     steps:
       - name: Checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v3     #checks out our repo code so subsequent steps can access it
 
       - name: Set up Python
-        if: ${{ inputs.python_version }}
-        uses: actions/setup-python@v4
+        if: ${{ inputs.python_version }}  #conditionally runs if python_version input is provided
+        uses: actions/setup-python@v4     #uses official action to install specified Python version
         with:
           python-version: ${{ inputs.python_version }}
 
       - name: Install dependencies
-        run: pip install -r requirements.txt
+        run: pip install -r requirements.txt    #installs dependencies listed in requirements.txt
 
       - name: Run tests
-        if: ${{ inputs.run_tests }}
+        if: ${{ inputs.run_tests }}   #runs only if run_tests is true
         run: |
-          set -e
-          pytest || echo "Tests failed" && exit 1
+          set -e      #ensures script exits immediately if any command fails
+          pytest      #it automatically discovers test files (named test_*.py or *_test.py) --> runs functions inside them --> reports results (pass/fail --> exits with a status code that CI/CD systems can use
 
       - name: Set result output
-        id: set-result
+        id: set-result        #defines a step with id: set-result so its outputs can be referenced
         run: |
           if [ "${{ inputs.run_tests }}" = "true" ]; then
             echo "test_result=passed" >> $GITHUB_OUTPUT
           else
             echo "test_result=skipped" >> $GITHUB_OUTPUT
-          fi
+          fi      #this value is then exposed as job output (${{ steps.set-result.outputs.test_result }})
 ```
-This workflow does NOT deploy — it only builds and tests.
+- This workflow does NOT deploy — it only builds and tests.
 
 ## Task 3: Reusable Workflow — Docker Build & Push
-**First**, go to Docker Hub → Account Settings → Security → create an access token. Then in your GitHub repo go to Settings → Secrets → add `DOCKER_USERNAME` and `DOCKER_TOKEN`.
+**First**, go to **Docker Hub --> Settings --> Personal access tokens --> Generate new token**.
+
+Then in our GitHub repo go to **Settings --> Secrets and variables --> Actions --> add `DOCKER_USERNAME` and `DOCKER_TOKEN`**.
+
+![image alt](https://github.com/atulsharmadevops/90DaysOfDevOps/blob/b3f3e42b1d8ca0b597460fefa53c7c5185b4d8e9/2026/day-48/Screenshots/Screenshot%20(563).png)
 
 Create `.github/workflows/reusable-docker.yml`:
 ```yaml
 name: Reusable Docker Build & Push
 
 on:
-  workflow_call:
+  workflow_call:    #makes this workflow reusable - other workflows can call it
     inputs:
-      image_name:
+      image_name:   #docker image name (e.g., atulsharmadochub/myapp)
         required: true
         type: string
-      tag:
+      tag:          #tag (e.g., latest or sha-12345)
         required: true
         type: string
     secrets:
@@ -149,13 +189,13 @@ on:
 jobs:
   docker-build-push:
     runs-on: ubuntu-latest
-    outputs:
+    outputs:          #exposes 'image_url' to caller workflow, wired to step 'set-output'
       image_url: ${{ steps.set-output.outputs.image_url }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
 
-      - name: Log in to Docker Hub
+      - name: Log in to Docker Hub    #ensures runner can push images to our account
         uses: docker/login-action@v2
         with:
           username: ${{ secrets.docker_username }}
@@ -164,13 +204,13 @@ jobs:
       - name: Build and push Docker image
         uses: docker/build-push-action@v4
         with:
-          context: .
-          push: true
-          tags: ${{ inputs.image_name }}:${{ inputs.tag }}
+          context: .            #build from current directory
+          push: true            #push image to Docker Hub
+          tags: ${{ inputs.image_name }}:${{ inputs.tag }}    #applies tag (e.g., atulsharmadochub/myapp:latest).
 
-      - name: Set image URL output
-        id: set-output
-        run: echo "image_url=${{ inputs.image_name }}:${{ inputs.tag }}" >> $GITHUB_OUTPUT
+      - name: Set image URL output    #this job maps this to its own output so caller workflow can use it
+        id: set-output    #defines a step with id: set-output
+        run: echo "image_url=${{ inputs.image_name }}:${{ inputs.tag }}" >> $GITHUB_OUTPUT      #this makes steps.set-output.outputs.image_url available
 
 ```
 ## Task 4: PR Pipeline
@@ -179,41 +219,62 @@ jobs:
 name: PR Pipeline
 
 on:
-  pull_request:
-    branches: [ main ]
-    types: [opened, synchronize]
+  pull_request:     #runs when a pull request event occurs
+    branches: [ main ]      #only triggers if PR targets main branch
+    types: [opened, synchronize]  #runs when PR is opened or PR is synchronized (updated with new commits)
 
 jobs:
   # Call the reusable build-test workflow
-  build-test:
-    uses: ./.github/workflows/reusable-build-test.yml
+  build-test:         #this job validates PR code by building and testing it
+    uses: ./.github/workflows/reusable-build-test.yml   #calls our reusable-build-test workflow
     with:
       python_version: "3.10"
-      run_tests: true
+      run_tests: true   #runs test suite
 
   # Add a standalone job for PR summary
   pr-comment:
     runs-on: ubuntu-latest
-    needs: build-test
+    needs: build-test   #waits until build-test job finishes successfully
     steps:
       - name: Print PR summary
-        run: echo "PR checks passed for branch: ${{ github.head_ref }}"
+        run: echo "PR checks passed for branch: ${{ github.head_ref }}"   #(github.head_ref) - the source branch of the PR 
 ```
-- **Trigger:** Runs only on PRs targeting `main` when opened or updated.
-- **Job 1:** Calls your reusable build-test workflow (from Task 2).
-- **Job 2:** Prints a summary message after tests complete.
-- **No Docker build/push:** This workflow intentionally skips Docker steps to keep PR checks lightweight.
-
 ### Verification
-- Open a PR against `main`.
+- Push our workflows to the `main` branch
+  ```bash
+  git add reusable-build-test.yml reusable-docker.yml pr-pipeline.yml
+  git commit -m "Added reusable build-test, docker, and PR pipeline workflows"
+  git push origin main
+  ```
+- Go to our repo’s **Actions tab**. We should see the **PR pipeline** listed.
+
+  ![image alt](https://github.com/atulsharmadevops/90DaysOfDevOps/blob/b3f3e42b1d8ca0b597460fefa53c7c5185b4d8e9/2026/day-48/Screenshots/Screenshot%20(552).png)
+
+- Trigger the PR pipeline
+  ```bash
+  git checkout -b feature/test-pr
+  echo "Enforcing code quality checks before merging into main." >> README.md
+  git add README.md
+  git commit -m "Testing PR trigger"
+  git push origin feature/test-pr
+  ```
+- Open a **pull request** into `main`. The **PR pipeline** will run automatically.
+
+  ![image alt](https://github.com/atulsharmadevops/90DaysOfDevOps/blob/b3f3e42b1d8ca0b597460fefa53c7c5185b4d8e9/2026/day-48/Screenshots/Screenshot%20(545).png)
+
 - GitHub Actions will run:
     - Build & test job.
     - PR summary job.
+
+      ![image alt](https://github.com/atulsharmadevops/90DaysOfDevOps/blob/b3f3e42b1d8ca0b597460fefa53c7c5185b4d8e9/2026/day-48/Screenshots/Screenshot%20(547).png)
+
 - We should see output like:
-    ```Code
-    PR checks passed for branch: feature-xyz
-    ```
+  
+  ![image alt](https://github.com/atulsharmadevops/90DaysOfDevOps/blob/b3f3e42b1d8ca0b597460fefa53c7c5185b4d8e9/2026/day-48/Screenshots/Screenshot%20(550).png)
+
 - Confirm that **no Docker login/build/push steps** are executed.
+
+  ![image alt](https://github.com/atulsharmadevops/90DaysOfDevOps/blob/b3f3e42b1d8ca0b597460fefa53c7c5185b4d8e9/2026/day-48/Screenshots/Screenshot%20(551).png)
 
 ## Task 5: Main Branch Pipeline
 ### Workflow File: `.github/workflows/main-pipeline.yml`
@@ -221,7 +282,7 @@ jobs:
 name: Main Branch Pipeline
 
 on:
-  push:
+  push:   #this ensures only production‑ready code triggers pipeline
     branches: [ main ]
 
 jobs:
@@ -234,55 +295,52 @@ jobs:
 
   # Job 2: Docker Build & Push (depends on build-test)
   docker-build-push:
-    needs: build-test
-    uses: ./.github/workflows/reusable-docker.yml
+    needs: build-test   #runs only after build-test passes
+    uses: ./.github/workflows/reusable-docker.yml   #calls our reusable-docker.yml workflow
     with:
-      image_name: mydockerhubuser/myapp
-      tag: latest
+      image_name: atulsharmadochub/myapp
+      tag: latest   #builds and pushes image tagged latest to Docker Hub
     secrets:
       docker_username: ${{ secrets.DOCKER_USERNAME }}
       docker_token: ${{ secrets.DOCKER_TOKEN }}
 
   # Job 2b: Push with short SHA tag
   docker-build-push-sha:
-    needs: build-test
-    uses: ./.github/workflows/reusable-docker.yml
+    needs: build-test     #runs only after build-test passes
+    uses: ./.github/workflows/reusable-docker.yml   #calls our reusable-docker.yml workflow
     with:
-      image_name: mydockerhubuser/myapp
-      tag: sha-${{ github.sha }}
+      image_name: atulsharmadochub/myapp
+      tag: sha-${{ github.sha }}    #builds and pushes same image but tagged with commit SHA - this gives us a unique version per commit for traceability
     secrets:
       docker_username: ${{ secrets.DOCKER_USERNAME }}
       docker_token: ${{ secrets.DOCKER_TOKEN }}
 
   # Job 3: Deploy (depends on Docker jobs)
-  deploy:
+  deploy:         #echoes image URL from docker-build-push job
     runs-on: ubuntu-latest
-    needs: [docker-build-push, docker-build-push-sha]
-    environment: production
+    needs: [docker-build-push, docker-build-push-sha]   #runs only after both Docker jobs succeed
+    environment: production   #marks job as targeting production environment
     steps:
       - name: Deploy to production
-        run: echo "Deploying image: ${{ needs.docker-build-push.outputs.image_url }} to production"
+        run: echo "Deploying image: ${{ needs.docker-build-push.outputs.image_url }} to production"     #right now it’s just a placeholder — in a real pipeline, we’d replace this with deployment commands (e.g., kubectl apply, docker service update, etc.)
 ```
-- **Trigger:** Runs only on `push` to `main`.
-- **Job 1:** Calls our reusable build-test workflow.
-- **Job 2:** Calls reusable Docker workflow twice:
-  - Once with `latest` tag.
-  - Once with `sha-<commit>` tag (we can shorten SHA with `cut -c1-7` if desired).
-- **Job 3:** Deploy job prints deployment message and uses `environment: production`.
-  - If we set up environment protection rules in GitHub --> Settings --> Environments --> Production, this job will require manual approval.
 
 ### Verification
 - Merge a PR into `main`.
+  - Merge commit --> creates a new commit on `main` --> triggers `push`.
 - GitHub Actions will run:
   - Build & test job.
   - Docker build & push jobs (latest + SHA).
   - Deploy job (after Docker jobs succeed).
+
+    ![image alt](https://github.com/atulsharmadevops/90DaysOfDevOps/blob/b3f3e42b1d8ca0b597460fefa53c7c5185b4d8e9/2026/day-48/Screenshots/Screenshot%20(565).png)
+
 - We should see logs like:
-  ```Code
-  Deploying image: mydockerhubuser/myapp:latest to production
-  ```
+
+  ![image alt](https://github.com/atulsharmadevops/90DaysOfDevOps/blob/b3f3e42b1d8ca0b597460fefa53c7c5185b4d8e9/2026/day-48/Screenshots/Screenshot%20(566).png)
+
 ## Task 6: Scheduled Health Check
-### Workflow File: .github/workflows/health-check.yml
+### Workflow File: `.github/workflows/health-check.yml`
 ```yaml
 name: Scheduled Health Check
 
@@ -296,21 +354,21 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Pull latest Docker image
-        run: docker pull mydockerhubuser/myapp:latest
+        run: docker pull atulsharmadochub/myapp:latest
 
       - name: Run container
-        run: docker run -d -p 5000:5000 --name myapp mydockerhubuser/myapp:latest
+        run: docker run -d -p 5000:5000 --name myapp atulsharmadochub/myapp:latest
 
       - name: Wait for app to start
-        run: sleep 5
+        run: sleep 10
 
       - name: Curl health endpoint
         id: curl
         run: |
-          if curl -s http://localhost:5000/health | grep -q "ok"; then
-            echo "status=PASSED" >> $GITHUB_OUTPUT
+          if curl -s http://localhost:5000/health | grep -q "ok"; then  #hits /health endpoint on running container
+            echo "status=PASSED" >> $GITHUB_OUTPUT    #if response contains "ok", sets status=PASSED otherwise status=FAILED
           else
-            echo "status=FAILED" >> $GITHUB_OUTPUT
+            echo "status=FAILED" >> $GITHUB_OUTPUT    #writes result to $GITHUB_OUTPUT so later steps can use it
           fi
 
       - name: Stop and remove container
@@ -318,41 +376,60 @@ jobs:
           docker stop myapp
           docker rm myapp
 
-      - name: Write summary
+      - name: Write summary     #writes a Markdown summary to GitHub Actions job summary which is visible in Actions run details
         run: |
           echo "## Health Check Report" >> $GITHUB_STEP_SUMMARY
-          echo "- Image: mydockerhubuser/myapp:latest" >> $GITHUB_STEP_SUMMARY
+          echo "- Image: atulsharmadochub/myapp:latest" >> $GITHUB_STEP_SUMMARY
           echo "- Status: ${{ steps.curl.outputs.status }}" >> $GITHUB_STEP_SUMMARY
           echo "- Time: $(date)" >> $GITHUB_STEP_SUMMARY
 ```
-- **Trigger:** Runs every 12 hours via cron, plus manual dispatch.
-- **Steps:**
-  - Pull latest Docker image.
-  - Run container in detached mode.
-  - Wait 5 seconds.
-  - Curl `/health` endpoint --> check response.
-  - Stop & remove container.
-  - Write a clean summary to `$GITHUB_STEP_SUMMARY`.
-- **Summary:** Appears in the Actions run summary page with a neat report.
-
 ### Verification
 - Trigger manually (`workflow_dispatch`) to test.
 - Check the run summary ---> we should see a markdown report like:
-  ```Code
-  ## Health Check Report
-  - Image: mydockerhubuser/myapp:latest
-  - Status: PASSED
-  - Time: Fri Apr 17 12:32 IST 2026
-  ```
-## Task 7: Add Badges & Documentation
-Add status badges for all your workflows to the repo README.md
-Add a pipeline architecture diagram in your notes — draw (or describe) the flow:
-PR opened → build & test → PR checks pass
-Merge to main → build & test → Docker build & push → deploy
-Every 12 hours → health check
-Fill in your notes: What would you add next? (Slack notifications? Multi-environment? Rollback?)
 
-## Brownie Points: Add Security to Your Pipeline
+  ![image alt](https://github.com/atulsharmadevops/90DaysOfDevOps/blob/b3f3e42b1d8ca0b597460fefa53c7c5185b4d8e9/2026/day-48/Screenshots/Screenshot%20(559).png)
+
+## Task 7: Add Badges & Documentation
+- Add status badges for all our workflows to the repo `README.md`
+
+  ![image alt](https://github.com/atulsharmadevops/90DaysOfDevOps/blob/b3f3e42b1d8ca0b597460fefa53c7c5185b4d8e9/2026/day-48/Screenshots/Screenshot%20(567).png)
+
+- Add a pipeline architecture diagram:
+  ```Code
+  PR opened
+    ↓
+  Build & Test
+    ↓
+  PR checks pass
+    ↓
+  Merge to main
+    ↓
+  Build & Test
+    ↓
+  Docker Build & Push
+    ↓
+  Deploy
+    ↓
+  ───────────────
+  Every 12 hours
+    ↓
+  Health Check
+  ```
+- What would we can add next? (Slack notifications? Multi-environment? Rollback?)<br>
+**Ans.**
+  - **Slack notifications**  
+  Send alerts when builds fail or deploys succeed. This keeps your team in the loop without checking the Actions tab.
+  - **Multi‑environment support**  
+  Separate pipelines for dev → staging → prod. Add approvals or manual gates before promoting to production.
+  - **Rollback strategy**  
+  If a deploy fails, automatically revert to the last stable Docker image. This ensures uptime and reliability.
+  - **Security scans**  
+  Run Trivy or Snyk on your Docker images to catch vulnerabilities before pushing to production.
+  - **Coverage reports**  
+  Publish test coverage results and add a badge to your README. This shows code quality at a glance.
+  - **Artifact retention**  
+  Save build artifacts (logs, binaries) for debugging and auditing.
+## Brownie Points: Add Security to Our Pipeline
 ### Workflow Update: Add Security Scan
 Modify `.github/workflows/main-pipeline.yml` after the Docker build job:
 
@@ -364,50 +441,53 @@ jobs:
     needs: build-test
     uses: ./.github/workflows/reusable-docker.yml
     with:
-      image_name: mydockerhubuser/myapp
+      image_name: atulsharmadochub/myapp
       tag: latest
     secrets:
       docker_username: ${{ secrets.DOCKER_USERNAME }}
       docker_token: ${{ secrets.DOCKER_TOKEN }}
 
   security-scan:
-    needs: docker-build-push
+    needs: docker-build-push    # runs only after Docker image has been built and pushed
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
 
       - name: Run Trivy vulnerability scanner
-        uses: aquasecurity/trivy-action@0.20.0
+        uses: aquasecurity/trivy-action@v0.36.0
         with:
-          image-ref: mydockerhubuser/myapp:latest
-          format: 'table'
-          exit-code: '1'
-          severity: 'CRITICAL'
-          output: trivy-report.txt
+          image-ref: atulsharmadochub/myapp:latest   #scans pushed Docker image
+          format: 'table'     #outputs results in a human‑readable table
+          exit-code: '1'      #if CRITICAL vulnerabilities are found, the job fails
+          severity: 'CRITICAL'  #only reports critical issues
+          output: trivy-report.txt    #saves report to a file
 
       - name: Upload Trivy scan report
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4  #attaches report to workflow run so we can download it later
         with:
           name: trivy-report
           path: trivy-report.txt
 
   deploy:
     runs-on: ubuntu-latest
-    needs: [docker-build-push, security-scan]
+    needs: [docker-build-push, security-scan]   #deploy only happens if both Docker build and security scan succeed
     environment: production
     steps:
       - name: Deploy to production
         run: echo "Deploying image: ${{ needs.docker-build-push.outputs.image_url }} to production"
 ```
-- **Trivy Action:** `aquasecurity/trivy-action` scans the Docker image.
-- **Fail on CRITICAL:** `exit-code: 1` ensures the pipeline fails if CRITICAL vulnerabilities are found.
-- **Report Upload:** `actions/upload-artifact` saves the scan report for review.
-- **Deploy Job Dependency:** The deploy job waits for both Docker build and security scan to succeed.
-
 ### Verification
-- Merge a PR to `main`.
+- Push to `main` branch:
+  ```bash
+  git add main-pipeline.yml
+  git commit -m "Added Security Scan to Main Pipeline"
+  git push origin main
+  ```
 - Pipeline runs: build --> Docker push --> Trivy scan --> deploy.
+
+  ![image alt](https://github.com/atulsharmadevops/90DaysOfDevOps/blob/b3f3e42b1d8ca0b597460fefa53c7c5185b4d8e9/2026/day-48/Screenshots/Screenshot%20(561).png)
+
 - If CRITICAL CVEs are found:
   - Pipeline fails at the security scan step.
   - Report is available in the workflow artifacts.
