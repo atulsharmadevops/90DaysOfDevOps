@@ -29,26 +29,26 @@ A Service solves both problems by providing:
 First create a Deployment that we will expose with Services.
 ### Manifest - `app-deployment.yaml`
 ```yaml
-apiVersion: apps/v1
-kind: Deployment
+apiVersion: apps/v1                 #tells Kubernetes which API group/version to use. apps/v1 is stable API for Deployments, ReplicaSets, StatefulSets, etc.
+kind: Deployment                    #defines resource type. A Deployment manages Pods via ReplicaSets, ensuring scaling and self‑healing.
 metadata:
-  name: web-app
-  labels:
+  name: web-app                     #unique name of Deployment.
+  labels:                           #key‑value label used for grouping and Service selectors.
     app: web-app
-spec:
+spec:                               #desired state of Deployment.
   replicas: 3
-  selector:
+  selector:                         #tells Deployment which Pods it manages. Must match Pod template labels.
     matchLabels:
       app: web-app
-  template:
-    metadata:
+  template:                         #pod blueprint used by Deployment.
+    metadata:                       #must match selector above (app: web-app).
       labels:
         app: web-app
     spec:
-      containers:
-      - name: nginx
-        image: nginx:1.25
-        ports:
+      containers:                   #defines workload inside each Pod.
+      - name: nginx                 #logical name for container.
+        image: nginx:1.25           #docker image pulled from registry (Nginx version 1.25).
+        ports:                      #declares container listens on port 80 (HTTP). This helps Services target Pod correctly.
         - containerPort: 80
 ```
 ### Apply and Check Pods
@@ -66,16 +66,16 @@ ClusterIP is the **default** Service type. It assigns a stable internal IP that 
 ### Manifest - `clusterip-service.yaml`
 ```yaml
 apiVersion: v1
-kind: Service
+kind: Service                 #defines resource type. A Service provides stable networking for Pods, abstracting away their dynamic IPs.
 metadata:
-  name: web-app-clusterip
-spec:
-  type: ClusterIP
-  selector:
+  name: web-app-clusterip     #unique name of Service in namespace.
+spec:                         #desired state of Service.
+  type: ClusterIP             #default Service type. Exposes app internally within cluster using a stable IP.
+  selector:                   #matches Pods with label app: web-app. This ties Service to Pods created by your Deployment.
     app: web-app
-  ports:
-  - port: 80
-    targetPort: 80
+  ports:                      #defines how traffic is routed.
+  - port: 80                  #port exposed by Service.
+    targetPort: 80            #port inside Pod’s container that traffic is forwarded to.
 ```
 | Field | Purpose |
 |---|---|
@@ -147,18 +147,18 @@ The IP returned by `nslookup` should match the `CLUSTER-IP` shown in `kubectl ge
 A NodePort Service opens a specific port on **every node** in the cluster, making the application reachable from outside the cluster via `<NodeIP>:<NodePort>`.
 ### Manifest — `nodeport-service.yaml`
 ```yaml
-apiVersion: v1
-kind: Service
+apiVersion: v1                  #uses core Kubernetes API group (v1) for basic resources like Services, Pods, ConfigMaps.
+kind: Service                   #defines resource type. A Service provides stable networking for Pods.
 metadata:
-  name: web-app-nodeport
-spec:
-  type: NodePort
-  selector:
+  name: web-app-nodeport        #unique name of Service.
+spec:                           #desired state of Service.
+  type: NodePort                #exposes Service on each Node’s IP at a static port (between 30000–32767). This allows external access without a LoadBalancer.
+  selector:                     #matches Pods with label app: web-app. This ties Service to our Deployment Pods.
     app: web-app
   ports:
-  - port: 80
-    targetPort: 80
-    nodePort: 30080
+  - port: 80                    #port exposed by Service inside cluster.
+    targetPort: 80              #port inside Pod’s container that traffic is forwarded to.
+    nodePort: 30080             #external port on each Node where Service is accessible.
 ```
 > NodePort values must be in the range **30000–32767**.
  
@@ -189,17 +189,17 @@ curl http://localhost:30080
 In a cloud environment (AWS, GCP, Azure), a LoadBalancer Service provisions a real external load balancer that routes public traffic to your cluster nodes.
 ### Manifest — `loadbalancer-service.yaml`
 ```yaml
-apiVersion: v1
+apiVersion: v1                      #uses core Kubernetes API group (v1) for basic resources like Services, Pods, ConfigMaps.
 kind: Service
 metadata:
   name: web-app-loadbalancer
 spec:
-  type: LoadBalancer
-  selector:
+  type: LoadBalancer                #Requests an external load balancer from the cloud provider. On managed clusters (EKS, GKE, AKS), this provisions a cloud load balancer and assigns a public IP. On bare EC2 or local clusters, the EXTERNAL-IP stays <pending> unless you install something like MetalLB.
+  selector:                         #matches Pods with label app: web-app. This ties Service to our Deployment Pods.
     app: web-app
   ports:
-  - port: 80
-    targetPort: 80
+  - port: 80                        #port exposed by Service externally.
+    targetPort: 80                  #port inside Pod’s container that traffic is forwarded to.
 ```
 
 ```bash
