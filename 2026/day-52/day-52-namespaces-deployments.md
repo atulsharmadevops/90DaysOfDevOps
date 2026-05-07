@@ -97,27 +97,27 @@ A Deployment tells Kubernetes: "I want X replicas of this Pod running at all tim
 
 Create a file `nginx-deployment.yaml`:
 ```yaml
-apiVersion: apps/v1
-kind: Deployment
+apiVersion: apps/v1           #specifies which Kubernetes API group and version this resource belongs to. apps/v1 is the stable version for workloads like Deployments, ReplicaSets, StatefulSets, etc.
+kind: Deployment              #defines type of resource. Here it’s a Deployment, which manages Pods via ReplicaSets and ensures self‑healing and scaling.
 metadata:
-  name: nginx-deployment
+  name: nginx-deployment      #unique name of Deployment in dev namespace.
   namespace: dev
-  labels:
+  labels:                     #key‑value labels used for grouping and selecting resources.
     app: nginx
-spec:
-  replicas: 3
+spec:                         #desired state of Deployment.
+  replicas: 3                 #ensures 3 Pods are always running.
   selector:
-    matchLabels:
+    matchLabels:              #tells Deployment which Pods it manages. Must match labels in Pod template.
       app: nginx
-  template:
-    metadata:
+  template:                   #pod blueprint used by Deployment to create Pods.
+    metadata:                 #must match selector above (app: nginx).
       labels:
         app: nginx
     spec:
-      containers:
-      - name: nginx
-        image: nginx:1.24
-        ports:
+      containers:             #defines workload inside each Pod.
+      - name: nginx           #logical name for container.
+        image: nginx:1.24     #docker image pulled from registry (here, Nginx version 1.24).
+        ports:                #declares that container listens on port 80 (HTTP). This is metadata for Kubernetes and helps when Services target this Pod.
         - containerPort: 80
 ```
 ### Key differences from a standalone Pod
