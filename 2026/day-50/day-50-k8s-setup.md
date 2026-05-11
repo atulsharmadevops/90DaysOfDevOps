@@ -1,11 +1,7 @@
 # Kubernetes Architecture and Cluster Setup
- 
 A deep-dive into Kubernetes concepts, architecture, and hands-on local cluster setup using `kind` or `minikube`.
  
----
- 
 ## Table of Contents
- 
 - [Background](#background)
   - [Why Kubernetes?](#why-kubernetes)
   - [Origin and Inspiration](#origin-and-inspiration)
@@ -24,14 +20,10 @@ A deep-dive into Kubernetes concepts, architecture, and hands-on local cluster s
   - [Option B: minikube](#option-b-minikube)
 - [Explore Our Cluster](#explore-our-cluster)
 - [Practice Cluster Lifecycle ](#practice-cluster-lifecycle)
----
  
 ## Background
- 
 ### Why Kubernetes?
- 
 Docker packages applications into containers, ensuring they run consistently across environments. However, Docker alone does not manage:
- 
 - **Where** containers run across multiple servers
 - **How** they scale up or down based on demand
 - **What** happens when a server fails
@@ -39,36 +31,25 @@ When applications grow to hundreds or thousands of containers distributed across
  
 Kubernetes was designed as an open-source orchestrator to automate the **deployment, scaling, and management** of containerized applications across clusters of machines.
  
----
- 
 ### Origin and Inspiration
- 
 Kubernetes was created at **Google in 2014** by engineers **Joe Beda, Brendan Burns, and Craig McLuckie**. It was donated to the **Cloud Native Computing Foundation (CNCF)** in 2015, which now oversees its development.
  
 Kubernetes drew from three key sources of inspiration:
- 
 | Influence | Contribution |
 |---|---|
 | **Borg** (Google internal) | Introduced declarative configuration, workload scheduling, and self-healing - all core to Kubernetes |
 | **Omega** (Google internal) | Influenced Kubernetes' approach to scalability and scheduler flexibility |
 | **Promise Theory** | A distributed systems model where components make autonomous promises about their behavior, rather than relying on strict centralized control |
  
----
- 
 ### What Does the Name Mean?
- 
 The name **Kubernetes** comes from the Ancient Greek word **κυβερνήτης** (*kubernḗtēs*), meaning **helmsman** or **ship's pilot**.
  
 It was chosen to symbolize Kubernetes' role in steering and managing containerized applications across distributed systems - much like a helmsman guiding a ship through open water.
  
 > This is also why the Kubernetes logo is a ship's wheel, and why related projects often use nautical terminology (Helm, Harbor, Fleet, etc.)
  
----
- 
 ## Architecture
- 
 ### Diagram
- 
 ```
 ┌──────────────────────────────────────────────────────┐
 │                    CONTROL PLANE                     │
@@ -101,11 +82,8 @@ It was chosen to symbolize Kubernetes' role in steering and managing containeriz
 │   └────────────────────────────────────────────┘     │
 └──────────────────────────────────────────────────────┘
 ```
- 
----
- 
+
 ### Control Plane Components
- 
 | Component | Role |
 |---|---|
 | **API Server** | The front door to the cluster. Every `kubectl` command and every internal component communicates through it. Validates requests and persists cluster state to `etcd`. |
@@ -113,22 +91,15 @@ It was chosen to symbolize Kubernetes' role in steering and managing containeriz
 | **Scheduler** | Watches for newly created pods with no assigned node. Selects the best node based on resource availability, affinity rules, and constraints. |
 | **Controller Manager** | Runs a collection of control loops. Each controller watches current state and drives it toward desired state - for example, the ReplicaSet controller ensures the correct number of pod replicas are always running. |
  
----
- 
 ### Worker Node Components
- 
 | Component | Role |
 |---|---|
 | **kubelet** | An agent running on every node. Receives pod specs from the API server and instructs the container runtime to start or stop containers. Reports node and pod status back to the control plane. |
 | **kube-proxy** | Maintains network rules on each node so pods can communicate with each other and with Services, both inside and outside the cluster. |
 | **Container Runtime** | The engine that actually runs containers. Kubernetes supports any CRI-compatible runtime - most commonly `containerd` or `CRI-O`. Docker Engine is no longer directly supported. |
  
----
- 
 ## Request Lifecycle
- 
 ### What Happens When We Run `kubectl apply`?
- 
 Tracing `kubectl apply -f pod.yaml` through each component:
  
 ```
@@ -141,14 +112,10 @@ kubectl
                               └─► Pod starts
 ```
  
----
- 
 ### What Happens If the API Server Goes Down?
- 
 The API server is the cluster's central communication hub. Its failure has a significant but **not total** impact.
  
 **What breaks:**
- 
 | Capability | Impact |
 |---|---|
 | `kubectl` commands | All fail — `kubectl get`, `apply`, `delete`, etc. all require the API server |
@@ -158,7 +125,6 @@ The API server is the cluster's central communication hub. Its failure has a sig
 | Cluster visibility | Monitoring dashboards and tools that query the API server stop working |
  
 **What continues working:**
- 
 | Capability | Why |
 |---|---|
 | Existing pods keep running | `kubelet` and the container runtime manage containers locally and don't depend on the API server for ongoing execution |
@@ -166,10 +132,7 @@ The API server is the cluster's central communication hub. Its failure has a sig
  
 > **Key insight:** The control plane going down freezes the cluster's desired state management, but it does not immediately kill running workloads.
  
----
- 
 ### What Happens If a Worker Node Goes Down?
- 
 | Capability | Impact |
 |---|---|
 | Pods on the failed node | Stop running immediately - kubelet and runtime are gone |
@@ -179,7 +142,6 @@ The API server is the cluster's central communication hub. Its failure has a sig
 | Control plane | Fully operational - cluster management continues |
  
 **Recovery (automatic):**
- 
 1. Controller Manager detects missing pod replicas on the failed node
 2. Pods are rescheduled onto healthy nodes (if resources are available)
 3. Deployments and ReplicaSets restore the desired replica count
