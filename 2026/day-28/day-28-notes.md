@@ -1,14 +1,8 @@
 # Day 28 - Linux, Shell Scripting & Git Review
 
----
-
 ## Task 1: Self-Assessment Checklist
 
----
-
 ### Linux
-
----
 
 #### ✅ Navigate the file system, create/move/delete files and directories
 
@@ -124,7 +118,6 @@ G            # go to bottom of file
 ---
 
 #### ✅ Troubleshoot CPU, memory, and disk issues
-
 ```bash
 # CPU
 top                        # live — press P to sort by CPU
@@ -152,7 +145,6 @@ dmesg | tail -50           # kernel ring buffer — disk/hardware errors here
 ---
 
 #### ✅ Explain the Linux file system hierarchy
-
 | Path | Purpose |
 |------|---------|
 | `/` | Root — everything starts here |
@@ -176,7 +168,6 @@ dmesg | tail -50           # kernel ring buffer — disk/hardware errors here
 ---
 
 #### ✅ Create users and groups, manage passwords
-
 ```bash
 # Users
 useradd alice                          # create user (no home dir by default)
@@ -214,7 +205,6 @@ usermod -aG wheel alice                # give alice sudo (RHEL/CentOS)
 ---
 
 #### ✅ Set file permissions using chmod
-
 **Permission structure:**
 ```
 -rwxr-xr--
@@ -255,7 +245,6 @@ chmod u=rwx,g=rx,o= file   # set each class explicitly
 ---
 
 #### ✅ Change file ownership with chown and chgrp
-
 ```bash
 chown alice file.txt            # change owner to alice
 chown alice:devteam file.txt    # change owner and group
@@ -272,7 +261,6 @@ stat file.txt                   # detailed ownership + permissions info
 ---
 
 #### ✅ Create and manage LVM volumes
-
 ```bash
 # Physical Volume (PV) — raw disk/partition prepared for LVM
 pvcreate /dev/sdb               # initialise disk for LVM
@@ -307,7 +295,6 @@ lvcreate -L 5G -s -n appsnap /dev/datavg/applv  # take a snapshot
 ---
 
 #### ✅ Check network connectivity
-
 ```bash
 # Basic connectivity
 ping google.com                    # ICMP echo — is the host reachable?
@@ -343,7 +330,6 @@ ifconfig                           # older equivalent
 ---
 
 #### ✅ Explain DNS, IP addressing, subnets, and common ports
-
 **DNS Resolution (what happens when you type google.com):**
 1. Browser checks its own cache.
 2. OS checks `/etc/hosts`.
@@ -379,10 +365,6 @@ ifconfig                           # older equivalent
 | 6379 | TCP | Redis |
 | 27017 | TCP | MongoDB |
 | 8080 | TCP | HTTP alt / dev servers |
-
----
-
-### Shell Scripting
 
 ---
 
@@ -647,10 +629,6 @@ run-parts --test /etc/cron.daily     # test which scripts would run
 systemctl status cron                # make sure cron is running
 grep CRON /var/log/syslog            # cron execution log
 ```
-
----
-
-### Git & GitHub
 
 ---
 
