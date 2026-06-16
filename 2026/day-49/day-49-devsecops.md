@@ -221,6 +221,7 @@ The **dependency review action** only works if GitHub’s **Dependency Graph** f
   - **Dependency graph**
   - **Dependabot alerts** (optional but recommended)
   - **Dependabot security updates** (optional)
+  
 Once enabled, GitHub will start indexing our `requirements.txt`, `package.json`, or other manifest files.
 
 ### Open A Pull Request
