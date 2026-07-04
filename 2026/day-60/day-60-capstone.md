@@ -576,6 +576,16 @@ kubectl get all -n helm-test
 
 ![image alt](https://github.com/atulsharmadevops/90DaysOfDevOps/blob/f4cedb40113e7cd40cb15e162e6b2d22eaa3341e/2026/day-60/Screenshots/Screenshot%20(1557).png)
 
+| Aspect | Manual (``capstone``) | Helm (``helm-test``) |
+| --- | --- | --- |
+| **Setup** | Multiple YAML files applied manually | One ``helm ``install`` command |
+| **Database** | MySQL StatefulSet + Secret | MariaDB StatefulSet auto‑created |
+| **Service Type** | NodePort (fixed port 30080) | LoadBalancer (external IP pending) |
+| **Scaling** | Explicit HPA defined | Replica count in values.yaml (HPA optional) |
+| **Persistence** | PVC manually defined | PVC auto‑created by chart |
+| **Transparency** | Full control, educational | Abstracted, faster, production‑ready |
+| **Best Practices** | You decide | Bitnami pre‑configures |
+
 ### Clean Up Helm Deployment
 ```bash
 helm uninstall wp-helm -n helm-test
