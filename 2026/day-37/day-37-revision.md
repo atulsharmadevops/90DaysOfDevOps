@@ -294,5 +294,3 @@ Run `docker system df` to see a structured breakdown of disk consumption across 
 ```bash
 docker system prune -a --volumes
 ```
-docker-revision-guide.md
-Displaying docker-revision-guide.md.
