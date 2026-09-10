@@ -11,10 +11,10 @@ A capstone project that brings together Terraform workspaces, custom modules, en
 - [Destroy All Environments](#7-destroy-all-environments)
 
 ## 1. Learn Terraform Workspaces
-A Terraform workspace is an isolated state environment within a single project directory. Instead of maintaining separate folders for dev, staging, and prod - each with duplicated code - workspaces let you use one codebase with independent state files per environment.
+A Terraform workspace is an isolated state environment within a single project directory. Instead of maintaining separate folders for dev, staging, and prod - each with duplicated code - workspaces let us use one codebase with independent state files per environment.
 
 ### Create Project Directory
-Start by creating a new folder for your capstone project.
+Start by creating a new folder for our capstone project.
 ```bash
 mkdir terraweek-capstone && cd terraweek-capstone
 ```
@@ -22,19 +22,52 @@ mkdir terraweek-capstone && cd terraweek-capstone
 
 ### Initialize Terraform
 Initialize Terraform to set up the working directory.
+
+`terraweek-capstone/providers.tf`
+```bash
+terraform {
+  required_version = ">= 1.5.0"
+
+  required_providers {
+    aws = {
+      source  = "hashicorp/aws"
+      version = "~> 5.0"
+    }
+  }
+}
+
+provider "aws" {
+  region = var.aws_region
+
+  default_tags {
+    tags = {
+      ManagedBy = "Terraform"
+      Project   = var.project_name
+    }
+  }
+}
+```
+
 ```bash
 terraform init
 ```
 - Downloads provider plugins
+
+  ![image alt](https://github.com/atulsharmadevops/90DaysOfDevOps/blob/6b1c9829047447aca63c1ed4f81846cf0d0ace1c/2026/day-67/Screenshots/Screenshot%20(2973).png)
+
 - Creates `.terraform/` folder for state and configs
 
+  ![image alt](https://github.com/atulsharmadevops/90DaysOfDevOps/blob/6b1c9829047447aca63c1ed4f81846cf0d0ace1c/2026/day-67/Screenshots/Screenshot%20(2975).png)
+
 ### Check Current Workspace
-Verify which workspace you are currently in.
+Verify which workspace we are currently in.
 ```bash
 terraform workspace show
 ```
 - Default workspace is always `default`
 - This is where state is stored initially
+
+![image alt](https://github.com/atulsharmadevops/90DaysOfDevOps/blob/6b1c9829047447aca63c1ed4f81846cf0d0ace1c/2026/day-67/Screenshots/Screenshot%20(2979).png)
 
 ### Create New Workspaces
 Add separate workspaces for dev, staging, and prod.
@@ -45,6 +78,8 @@ terraform workspace new prod
 ```
 - Each creates its own isolated state file
 
+![image alt](https://github.com/atulsharmadevops/90DaysOfDevOps/blob/6b1c9829047447aca63c1ed4f81846cf0d0ace1c/2026/day-67/Screenshots/Screenshot%20(2980).png)
+
 ### List All Workspaces
 Confirm that all workspaces exist.
 ```bash
@@ -52,6 +87,8 @@ terraform workspace list
 ```
 - We should see: `default`, `dev`, `staging`, `prod`
 - Active workspace marked with `*`
+
+![image alt](https://github.com/atulsharmadevops/90DaysOfDevOps/blob/6b1c9829047447aca63c1ed4f81846cf0d0ace1c/2026/day-67/Screenshots/Screenshot%20(2982).png)
 
 ### Switch Between Workspaces
 Move between environments easily.
@@ -61,6 +98,8 @@ terraform workspace select staging
 terraform workspace select prod
 ```
 - Each switch changes the active state context
+
+![image alt](https://github.com/atulsharmadevops/90DaysOfDevOps/blob/6b1c9829047447aca63c1ed4f81846cf0d0ace1c/2026/day-67/Screenshots/Screenshot%20(2984).png)
 
 ### What does `terraform.workspace` return inside a config?
 Inside any `.tf` file, `terraform.workspace` returns the name of the active workspace as a string:
@@ -115,7 +154,7 @@ terraweek-capstone/
 ```bash
 mkdir terraweek-capstone && cd terraweek-capstone
 ```
-- This is your root directory where all Terraform configs will live.
+- This is our root directory where all Terraform configs will live.
 
 ### Create the root-level files
 ```bash
@@ -160,6 +199,9 @@ Open `.gitignore` and paste:
 | `.terraform.lock.hcl` | Avoids version conflicts across team members |
 
 ### Why This File Structure Is Best Practice
+
+![image alt](https://github.com/atulsharmadevops/90DaysOfDevOps/blob/6b1c9829047447aca63c1ed4f81846cf0d0ace1c/2026/day-67/Screenshots/Screenshot%20(2990).png)
+
 | Principle | Implementation |
 |---|---|
 | Separation of concerns | Each file has one role (providers, vars, outputs, main, locals) |
@@ -375,6 +417,8 @@ terraform validate
 ```
 - This checks syntax and ensures the modules are valid Terraform configs.
 
+![image alt](https://github.com/atulsharmadevops/90DaysOfDevOps/blob/6b1c9829047447aca63c1ed4f81846cf0d0ace1c/2026/day-67/Screenshots/Screenshot%20(2987).png)
+
 ## 4. Wire It All Together with Workspace-Aware Config
 In the root module, use `terraform.workspace` to drive environment-specific behavior.
 
@@ -420,6 +464,12 @@ variable "ingress_ports" {
   type    = list(number)
   default = [22, 80]
 }
+
+variable "aws_region" {
+  description = "AWS Region"
+  type        = string
+  default     = "ap-south-1"
+}
 ```
 
 ### Wire modules together
@@ -443,7 +493,7 @@ module "security_group" {
 
 module "ec2_instance" {
   source            = "./modules/ec2-instance"
-  ami_id            = "ami-0c55b159cbfafe1f0" # Example Amazon Linux 2 AMI
+  ami_id            = "ami-0c55b159cbfafe1f0" # Check if AMI available before applying
   instance_type     = var.instance_type
   subnet_id         = module.vpc.subnet_id
   security_group_ids = [module.security_group.sg_id]
@@ -514,32 +564,84 @@ Non-overlapping CIDRs ensure the three VPCs could even be peered in the future w
 
 ## 5. Deploy All Three Environments
 Deploy each environment using its workspace and tfvars file:
+### Initialize Terraform Before Deploying
+```bash
+terraform init
+```
+![image alt](https://github.com/atulsharmadevops/90DaysOfDevOps/blob/6b1c9829047447aca63c1ed4f81846cf0d0ace1c/2026/day-67/Screenshots/Screenshot%20(2994).png)
+
 ### Deploy Dev Environment
 ```bash
 terraform workspace select dev
 terraform plan -var-file="dev.tfvars"
+```
+
+![image alt](https://github.com/atulsharmadevops/90DaysOfDevOps/blob/6b1c9829047447aca63c1ed4f81846cf0d0ace1c/2026/day-67/Screenshots/Screenshot%20(3000).png)
+![image alt](https://github.com/atulsharmadevops/90DaysOfDevOps/blob/6b1c9829047447aca63c1ed4f81846cf0d0ace1c/2026/day-67/Screenshots/Screenshot%20(3002).png)
+![image alt](https://github.com/atulsharmadevops/90DaysOfDevOps/blob/6b1c9829047447aca63c1ed4f81846cf0d0ace1c/2026/day-67/Screenshots/Screenshot%20(3004).png)
+![image alt](https://github.com/atulsharmadevops/90DaysOfDevOps/blob/6b1c9829047447aca63c1ed4f81846cf0d0ace1c/2026/day-67/Screenshots/Screenshot%20(3006).png)
+![image alt](https://github.com/atulsharmadevops/90DaysOfDevOps/blob/6b1c9829047447aca63c1ed4f81846cf0d0ace1c/2026/day-67/Screenshots/Screenshot%20(3008).png)
+![image alt](https://github.com/atulsharmadevops/90DaysOfDevOps/blob/6b1c9829047447aca63c1ed4f81846cf0d0ace1c/2026/day-67/Screenshots/Screenshot%20(3009).png)
+![image alt](https://github.com/atulsharmadevops/90DaysOfDevOps/blob/6b1c9829047447aca63c1ed4f81846cf0d0ace1c/2026/day-67/Screenshots/Screenshot%20(3010).png)
+![image alt](https://github.com/atulsharmadevops/90DaysOfDevOps/blob/6b1c9829047447aca63c1ed4f81846cf0d0ace1c/2026/day-67/Screenshots/Screenshot%20(3012).png)
+![image alt](https://github.com/atulsharmadevops/90DaysOfDevOps/blob/6b1c9829047447aca63c1ed4f81846cf0d0ace1c/2026/day-67/Screenshots/Screenshot%20(3014).png)
+
+```bash
 terraform apply -var-file="dev.tfvars"
 ```
 - This provisions a **VPC (10.0.0.0/16)**, subnet, SG (ports 22 + 80), and a **t2.micro EC2 instance**.
 - Tags: `terraweek-dev-server`.
 
+![image alt](https://github.com/atulsharmadevops/90DaysOfDevOps/blob/6b1c9829047447aca63c1ed4f81846cf0d0ace1c/2026/day-67/Screenshots/Screenshot%20(3016).png)
+
 ### Deploy Staging Environment
 ```bash
 terraform workspace select staging
 terraform plan -var-file="staging.tfvars"
+```
+
+![image alt](https://github.com/atulsharmadevops/90DaysOfDevOps/blob/6b1c9829047447aca63c1ed4f81846cf0d0ace1c/2026/day-67/Screenshots/Screenshot%20(3058).png)
+![image alt](https://github.com/atulsharmadevops/90DaysOfDevOps/blob/6b1c9829047447aca63c1ed4f81846cf0d0ace1c/2026/day-67/Screenshots/Screenshot%20(3059).png)
+![image alt](https://github.com/atulsharmadevops/90DaysOfDevOps/blob/6b1c9829047447aca63c1ed4f81846cf0d0ace1c/2026/day-67/Screenshots/Screenshot%20(3060).png)
+![image alt](https://github.com/atulsharmadevops/90DaysOfDevOps/blob/6b1c9829047447aca63c1ed4f81846cf0d0ace1c/2026/day-67/Screenshots/Screenshot%20(3062).png)
+![image alt](https://github.com/atulsharmadevops/90DaysOfDevOps/blob/6b1c9829047447aca63c1ed4f81846cf0d0ace1c/2026/day-67/Screenshots/Screenshot%20(3064).png)
+![image alt](https://github.com/atulsharmadevops/90DaysOfDevOps/blob/6b1c9829047447aca63c1ed4f81846cf0d0ace1c/2026/day-67/Screenshots/Screenshot%20(3065).png)
+![image alt](https://github.com/atulsharmadevops/90DaysOfDevOps/blob/6b1c9829047447aca63c1ed4f81846cf0d0ace1c/2026/day-67/Screenshots/Screenshot%20(3066).png)
+![image alt](https://github.com/atulsharmadevops/90DaysOfDevOps/blob/6b1c9829047447aca63c1ed4f81846cf0d0ace1c/2026/day-67/Screenshots/Screenshot%20(3067).png)
+![image alt](https://github.com/atulsharmadevops/90DaysOfDevOps/blob/6b1c9829047447aca63c1ed4f81846cf0d0ace1c/2026/day-67/Screenshots/Screenshot%20(3068).png)
+![image alt](https://github.com/atulsharmadevops/90DaysOfDevOps/blob/6b1c9829047447aca63c1ed4f81846cf0d0ace1c/2026/day-67/Screenshots/Screenshot%20(3069).png)
+
+```bash
 terraform apply -var-file="staging.tfvars"
 ```
 - Provisions **VPC (10.1.0.0/16)**, subnet, SG (ports 22, 80, 443), and a **t2.small EC2 instance**.
 - Tags: `terraweek-staging-server`.
 
+![image alt](https://github.com/atulsharmadevops/90DaysOfDevOps/blob/6b1c9829047447aca63c1ed4f81846cf0d0ace1c/2026/day-67/Screenshots/Screenshot%20(3070).png)
+
 ### Deploy Prod Environment
 ```bash
 terraform workspace select prod
 terraform plan -var-file="prod.tfvars"
+```
+
+![image alt](https://github.com/atulsharmadevops/90DaysOfDevOps/blob/6b1c9829047447aca63c1ed4f81846cf0d0ace1c/2026/day-67/Screenshots/Screenshot%20(3087).png)
+![image alt](https://github.com/atulsharmadevops/90DaysOfDevOps/blob/6b1c9829047447aca63c1ed4f81846cf0d0ace1c/2026/day-67/Screenshots/Screenshot%20(3089).png)
+![image alt](https://github.com/atulsharmadevops/90DaysOfDevOps/blob/6b1c9829047447aca63c1ed4f81846cf0d0ace1c/2026/day-67/Screenshots/Screenshot%20(3078).png)
+![image alt](https://github.com/atulsharmadevops/90DaysOfDevOps/blob/6b1c9829047447aca63c1ed4f81846cf0d0ace1c/2026/day-67/Screenshots/Screenshot%20(3091).png)
+![image alt](https://github.com/atulsharmadevops/90DaysOfDevOps/blob/6b1c9829047447aca63c1ed4f81846cf0d0ace1c/2026/day-67/Screenshots/Screenshot%20(3092).png)
+![image alt](https://github.com/atulsharmadevops/90DaysOfDevOps/blob/6b1c9829047447aca63c1ed4f81846cf0d0ace1c/2026/day-67/Screenshots/Screenshot%20(3093).png)
+![image alt](https://github.com/atulsharmadevops/90DaysOfDevOps/blob/6b1c9829047447aca63c1ed4f81846cf0d0ace1c/2026/day-67/Screenshots/Screenshot%20(3094).png)
+![image alt](https://github.com/atulsharmadevops/90DaysOfDevOps/blob/6b1c9829047447aca63c1ed4f81846cf0d0ace1c/2026/day-67/Screenshots/Screenshot%20(3095).png)
+![image alt](https://github.com/atulsharmadevops/90DaysOfDevOps/blob/6b1c9829047447aca63c1ed4f81846cf0d0ace1c/2026/day-67/Screenshots/Screenshot%20(3096).png)
+
+```bash
 terraform apply -var-file="prod.tfvars"
 ```
 - Provisions **VPC (10.2.0.0/16)**, subnet, SG (ports 80, 443 only — no SSH), and a **t3.small EC2 instance**.
 - Tags: `terraweek-prod-server`.
+
+![image alt](https://github.com/atulsharmadevops/90DaysOfDevOps/blob/6b1c9829047447aca63c1ed4f81846cf0d0ace1c/2026/day-67/Screenshots/Screenshot%20(3097).png)
 
 ### Verification
 **Terraform Outputs**
@@ -557,6 +659,8 @@ We should see:
 - Instance IDs
 - Public IPs
 
+![image alt](https://github.com/atulsharmadevops/90DaysOfDevOps/blob/6b1c9829047447aca63c1ed4f81846cf0d0ace1c/2026/day-67/Screenshots/Screenshot%20(3102).png)
+
 ### Expected state in AWS Console
 | Resource | Dev | Staging | Prod |
 |---|---|---|---|
@@ -564,6 +668,14 @@ We should see:
 | EC2 instance type | `t2.micro` | `t2.small` | `t3.small` |
 | EC2 Name tag | `terraweek-dev-server` | `terraweek-staging-server` | `terraweek-prod-server` |
 | SSH (port 22) | ✓ Open | ✓ Open | ✗ Closed |
+
+![image alt](https://github.com/atulsharmadevops/90DaysOfDevOps/blob/6b1c9829047447aca63c1ed4f81846cf0d0ace1c/2026/day-67/Screenshots/Screenshot%20(3105).png)
+![image alt](https://github.com/atulsharmadevops/90DaysOfDevOps/blob/6b1c9829047447aca63c1ed4f81846cf0d0ace1c/2026/day-67/Screenshots/Screenshot%20(3107).png)
+![image alt](https://github.com/atulsharmadevops/90DaysOfDevOps/blob/6b1c9829047447aca63c1ed4f81846cf0d0ace1c/2026/day-67/Screenshots/Screenshot%20(3109).png)
+![image alt](https://github.com/atulsharmadevops/90DaysOfDevOps/blob/6b1c9829047447aca63c1ed4f81846cf0d0ace1c/2026/day-67/Screenshots/Screenshot%20(3114).png)
+![image alt](https://github.com/atulsharmadevops/90DaysOfDevOps/blob/6b1c9829047447aca63c1ed4f81846cf0d0ace1c/2026/day-67/Screenshots/Screenshot%20(3116).png)
+![image alt](https://github.com/atulsharmadevops/90DaysOfDevOps/blob/6b1c9829047447aca63c1ed4f81846cf0d0ace1c/2026/day-67/Screenshots/Screenshot%20(3117).png)
+![image alt](https://github.com/atulsharmadevops/90DaysOfDevOps/blob/6b1c9829047447aca63c1ed4f81846cf0d0ace1c/2026/day-67/Screenshots/Screenshot%20(3118).png)
 
 ### Are all three environments completely isolated from each other?
 - Each environment has its **own VPC** → no overlap in CIDRs.
@@ -636,7 +748,10 @@ terraform workspace select prod
 terraform destroy -var-file="prod.tfvars"
 ```
 - Tears down the **prod VPC, subnet, SG, and EC2 instance**.
-- Since prod is the most restrictive (no SSH), you remove it first to avoid confusion.
+- Since prod is the most restrictive (no SSH), we remove it first to avoid confusion.
+
+![image alt](https://github.com/atulsharmadevops/90DaysOfDevOps/blob/6b1c9829047447aca63c1ed4f81846cf0d0ace1c/2026/day-67/Screenshots/Screenshot%20(3119).png)
+![image alt](https://github.com/atulsharmadevops/90DaysOfDevOps/blob/6b1c9829047447aca63c1ed4f81846cf0d0ace1c/2026/day-67/Screenshots/Screenshot%20(3124).png)
 
 ### Destroy Staging Environment
 ```bash
@@ -644,7 +759,10 @@ terraform workspace select staging
 terraform destroy -var-file="staging.tfvars"
 ```
 - Removes the **staging VPC, subnet, SG, and EC2 instance**.
-- This was your middle-tier environment (`t2.small`).
+- This was our middle-tier environment (`t2.small`).
+
+![image alt](https://github.com/atulsharmadevops/90DaysOfDevOps/blob/6b1c9829047447aca63c1ed4f81846cf0d0ace1c/2026/day-67/Screenshots/Screenshot%20(3126).png)
+![image alt](https://github.com/atulsharmadevops/90DaysOfDevOps/blob/6b1c9829047447aca63c1ed4f81846cf0d0ace1c/2026/day-67/Screenshots/Screenshot%20(3129).png)
 
 ### Destroy Dev Environment
 ```bash
@@ -652,13 +770,24 @@ terraform workspace select dev
 terraform destroy -var-file="dev.tfvars"
 ```
 - Cleans up the **dev VPC, subnet, SG, and EC2 instance**.
-- This was your smallest environment (`t2.micro`).
+- This was our smallest environment (`t2.micro`).
+
+![image alt](https://github.com/atulsharmadevops/90DaysOfDevOps/blob/6b1c9829047447aca63c1ed4f81846cf0d0ace1c/2026/day-67/Screenshots/Screenshot%20(3131).png)
+![image alt](https://github.com/atulsharmadevops/90DaysOfDevOps/blob/6b1c9829047447aca63c1ed4f81846cf0d0ace1c/2026/day-67/Screenshots/Screenshot%20(3133).png)
 
 ### Verify in AWS Console
 Check in the **AWS VPC console** and **EC2 console**:
 - No custom VPCs remain (only the default VPC should exist).
+
+  ![image alt](https://github.com/atulsharmadevops/90DaysOfDevOps/blob/6b1c9829047447aca63c1ed4f81846cf0d0ace1c/2026/day-67/Screenshots/Screenshot%20(3136).png)
+
 - No EC2 instances running.
+
+  ![image alt](https://github.com/atulsharmadevops/90DaysOfDevOps/blob/6b1c9829047447aca63c1ed4f81846cf0d0ace1c/2026/day-67/Screenshots/Screenshot%20(3137).png)
+
 - No custom security groups or internet gateways left.
+
+  ![image alt](https://github.com/atulsharmadevops/90DaysOfDevOps/blob/6b1c9829047447aca63c1ed4f81846cf0d0ace1c/2026/day-67/Screenshots/Screenshot%20(3139).png)
 
 ### Delete Workspaces
 Switch back to default and delete the others:
@@ -668,17 +797,22 @@ terraform workspace delete dev
 terraform workspace delete staging
 terraform workspace delete prod
 ```
-- You cannot delete the workspace you’re currently on, so always select `default` first.
+- We cannot delete the workspace we’re currently on, so always select `default` first.
 - After deletion, only `default` remains.
+
+![image alt](https://github.com/atulsharmadevops/90DaysOfDevOps/blob/6b1c9829047447aca63c1ed4f81846cf0d0ace1c/2026/day-67/Screenshots/Screenshot%20(3140).png)
 
 ### Final Verification
 Run:
 ```bash
 terraform workspace list
 ```
--  Should show only `default`.
+- Should show only `default`.
+
+  ![image alt](https://github.com/atulsharmadevops/90DaysOfDevOps/blob/6b1c9829047447aca63c1ed4f81846cf0d0ace1c/2026/day-67/Screenshots/Screenshot%20(3143).png)
+
 - In AWS console, confirm **no leftover resources** (VPCs, EC2s, SGs, IGWs).
-- Your AWS account is now completely clean.
+- Our AWS account is now completely clean.
 
 ### Key Reminders
 - **Reverse order cleanup** prevents dependency conflicts.
