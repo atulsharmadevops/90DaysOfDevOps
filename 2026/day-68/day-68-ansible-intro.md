@@ -11,15 +11,15 @@ A hands-on introduction to Ansible - covering configuration management concepts,
 
 ## 1. Understand Ansible
 ### What is Configuration Management?
-Configuration management (CM) is the practice of defining, tracking, and enforcing the desired state of your infrastructure — which packages are installed, which files exist, which services are running — through code rather than manual intervention.
+Configuration management (CM) is the practice of defining, tracking, and enforcing the desired state of our infrastructure — which packages are installed, which files exist, which services are running — through code rather than manual intervention.
  
 **Without CM:**
 - Servers get configured by hand → each one ends up slightly different ("snowflake servers")
 - No record of what changed, when, or why
 - Rebuilding a failed server takes hours of guesswork
 - Scaling to 100 servers means 100× the manual work
+
 **With CM:**
- 
 | Benefit | What it means in practice |
 |---|---|
 | **Reproducibility** | Define a server once; spin up 100 identical copies |
@@ -52,7 +52,7 @@ Control Node ──SSH──► Managed Node
 ```
  
 **How an Ansible run works:**
-1. You run a command on the **control node** (your laptop or a jump server)
+1. We run a command on the **control node** (our laptop or a jump server)
 2. Ansible connects to the **managed node** over SSH (Linux) or WinRM (Windows)
 3. It pushes a small Python script to the target and executes it
 4. The script is **cleaned up** — nothing persists after the run
@@ -69,7 +69,7 @@ Control Node ──SSH──► Managed Node
 ```
 ┌─────────────────────────────────────────────────┐
 │                  CONTROL NODE                   │
-│           (your laptop / jump server)           │
+│            (our laptop / jump server)           │
 │                                                 │
 │  ┌─────────────┐   ┌───────────┐  ┌──────────┐  │
 │  │  Playbook   │   │ Inventory │  │ Modules  │  │
@@ -94,11 +94,11 @@ Control Node ──SSH──► Managed Node
  
 ### Core components
  
-**Control Node** — the machine where Ansible is installed and all commands originate. This can be your laptop, a bastion server, or a CI/CD runner (GitHub Actions, Jenkins). Ansible runs only here.
+**Control Node** — the machine where Ansible is installed and all commands originate. This can be our laptop, a bastion server, or a CI/CD runner (GitHub Actions, Jenkins). Ansible runs only here.
  
 **Managed Nodes** — the servers Ansible configures. No Ansible installation required — only Python and SSH.
  
-**Inventory** — a file (or dynamic script) listing your managed nodes, optionally organized into groups.
+**Inventory** — a file (or dynamic script) listing our managed nodes, optionally organized into groups.
  
 ```ini
 # Static inventory example (hosts.ini)
@@ -203,6 +203,8 @@ provider "aws" {
 }
 ```
 
+![image alt](https://github.com/atulsharmadevops/90DaysOfDevOps/blob/411fa089f6f1aa566df35eee844368e1a4dfb346/2026/day-68/Screenshots/Screenshot%20(3174).png)
+
 ### Define Variables
 In `variables.tf`:
 ```hcl
@@ -213,10 +215,33 @@ variable "ami_id" {
 
 variable "key_name" {
   description = "SSH key pair name"
-  default     = "your-key"
+  default     = "our-key"
 }
 ```
 > Find valid AMI IDs in the AWS Console → EC2 → AMIs. Use Amazon Linux 2 (`ec2-user`) or Ubuntu 22.04 (`ubuntu`).
+
+**Generate the key pair on the control node itself.**
+```bash
+# on the EC2 control node
+ssh-keygen -t rsa -b 4096 -f ~/ansible-lab-key
+```
+
+![image alt](https://github.com/atulsharmadevops/90DaysOfDevOps/blob/411fa089f6f1aa566df35eee844368e1a4dfb346/2026/day-68/Screenshots/Screenshot%20(3163).png)
+
+- This gives us `ansible-lab-key` (private) and `ansible-lab-key.pub` (public) — both already on the control node.
+
+**Then import the public key into AWS as a key pair:**
+```bash
+aws ec2 import-key-pair \
+  --key-name "ansible-lab-key" \
+  --public-key-material fileb://~/ansible-lab-key.pub
+```
+
+![image alt](https://github.com/atulsharmadevops/90DaysOfDevOps/blob/411fa089f6f1aa566df35eee844368e1a4dfb346/2026/day-68/Screenshots/Screenshot%20(3170).png)
+
+- Now set `key_name = "ansible-lab-key"` in `variables.tf`
+
+![image alt](https://github.com/atulsharmadevops/90DaysOfDevOps/blob/411fa089f6f1aa566df35eee844368e1a4dfb346/2026/day-68/Screenshots/Screenshot%20(3173).png)
 
 ### Create Security Group
 In `main.tf`:
@@ -229,7 +254,7 @@ resource "aws_security_group" "ssh" {
     from_port   = 22
     to_port     = 22
     protocol    = "tcp"
-    cidr_blocks = ["YOUR_PUBLIC_IP/32"]  # Replace with your IP
+    cidr_blocks = ["OUR_PUBLIC_IP/32"]  # Replace with our primary EC2 Instance IP
   }
 
   egress {
@@ -269,6 +294,8 @@ resource "aws_instance" "db" {
 }
 ```
 
+![image alt](https://github.com/atulsharmadevops/90DaysOfDevOps/blob/411fa089f6f1aa566df35eee844368e1a4dfb346/2026/day-68/Screenshots/Screenshot%20(3181).png)
+
 ### Outputs for Easy Access
 In `outputs.tf`:
 ```hcl
@@ -285,24 +312,49 @@ output "db_public_ip" {
 }
 ```
 
+![image alt](https://github.com/atulsharmadevops/90DaysOfDevOps/blob/411fa089f6f1aa566df35eee844368e1a4dfb346/2026/day-68/Screenshots/Screenshot%20(3177).png)
+
 ### Deploy Infrastructure
 Run:
 ```bash
 terraform init
+```
+
+![image alt](https://github.com/atulsharmadevops/90DaysOfDevOps/blob/411fa089f6f1aa566df35eee844368e1a4dfb346/2026/day-68/Screenshots/Screenshot%20(3179).png)
+
+```bash
 terraform plan
+```
+
+![image alt](https://github.com/atulsharmadevops/90DaysOfDevOps/blob/411fa089f6f1aa566df35eee844368e1a4dfb346/2026/day-68/Screenshots/Screenshot%20(3183).png)
+![image alt](https://github.com/atulsharmadevops/90DaysOfDevOps/blob/411fa089f6f1aa566df35eee844368e1a4dfb346/2026/day-68/Screenshots/Screenshot%20(3185).png)
+![image alt](https://github.com/atulsharmadevops/90DaysOfDevOps/blob/411fa089f6f1aa566df35eee844368e1a4dfb346/2026/day-68/Screenshots/Screenshot%20(3187).png)
+![image alt](https://github.com/atulsharmadevops/90DaysOfDevOps/blob/411fa089f6f1aa566df35eee844368e1a4dfb346/2026/day-68/Screenshots/Screenshot%20(3189).png)
+![image alt](https://github.com/atulsharmadevops/90DaysOfDevOps/blob/411fa089f6f1aa566df35eee844368e1a4dfb346/2026/day-68/Screenshots/Screenshot%20(3191).png)
+![image alt](https://github.com/atulsharmadevops/90DaysOfDevOps/blob/411fa089f6f1aa566df35eee844368e1a4dfb346/2026/day-68/Screenshots/Screenshot%20(3193).png)
+![image alt](https://github.com/atulsharmadevops/90DaysOfDevOps/blob/411fa089f6f1aa566df35eee844368e1a4dfb346/2026/day-68/Screenshots/Screenshot%20(3195).png)
+![image alt](https://github.com/atulsharmadevops/90DaysOfDevOps/blob/411fa089f6f1aa566df35eee844368e1a4dfb346/2026/day-68/Screenshots/Screenshot%20(3197).png)
+
+```bash
 terraform apply -auto-approve
 ```
 - After apply, Terraform will print the public IPs of your 3 servers.
 
+![image alt](https://github.com/atulsharmadevops/90DaysOfDevOps/blob/411fa089f6f1aa566df35eee844368e1a4dfb346/2026/day-68/Screenshots/Screenshot%20(3199).png)
+
 ### Verify SSH Access
-From your control node:
+From our control node:
 ```bash
-ssh -i ~/your-key.pem ec2-user@<web_public_ip>
-ssh -i ~/your-key.pem ec2-user@<app_public_ip>
-ssh -i ~/your-key.pem ec2-user@<db_public_ip>
+ssh -i ~/our-key.pem ec2-user@<web_public_ip>
+ssh -i ~/our-key.pem ec2-user@<app_public_ip>
+ssh -i ~/our-key.pem ec2-user@<db_public_ip>
 ```
-- Use `ec2-user` for Amazon Linux 2
-- Use `ubuntu` for Ubuntu 22.04
+- Use `ec2-user` for Amazon Linux 2 / `ubuntu` for Ubuntu 22.04
+
+![image alt](https://github.com/atulsharmadevops/90DaysOfDevOps/blob/411fa089f6f1aa566df35eee844368e1a4dfb346/2026/day-68/Screenshots/Screenshot%20(3207).png)
+![image alt](https://github.com/atulsharmadevops/90DaysOfDevOps/blob/411fa089f6f1aa566df35eee844368e1a4dfb346/2026/day-68/Screenshots/Screenshot%20(3212).png)
+![image alt](https://github.com/atulsharmadevops/90DaysOfDevOps/blob/411fa089f6f1aa566df35eee844368e1a4dfb346/2026/day-68/Screenshots/Screenshot%20(3205).png)
+![image alt](https://github.com/atulsharmadevops/90DaysOfDevOps/blob/411fa089f6f1aa566df35eee844368e1a4dfb346/2026/day-68/Screenshots/Screenshot%20(3224).png)
 
 #### Expected Result
 - 3 EC2 instances (web-server, app-server, db-server)
@@ -310,12 +362,12 @@ ssh -i ~/your-key.pem ec2-user@<db_public_ip>
 - Verified SSH connectivity from control node
 
 ## 3. Install Ansible
-### Decide Your Control Node
+### Decide Our Control Node
 - The **control node** is the machine where Ansible is installed and commands are run.
-- You can use:
-  - Your **local laptop** (macOS/Linux/Windows with WSL).
+- We can use:
+  - Our **local laptop** (macOS/Linux/Windows with WSL).
   - Or a **dedicated EC2 instance** (often a jump server).
-- You only need Ansible on the control node because it connects to managed nodes via SSH - no agent is installed remotely.
+- We only need Ansible on the control node because it connects to managed nodes via SSH - no agent is installed remotely.
 
 ### Install Ansible
 Ubuntu/Debian
@@ -323,6 +375,9 @@ Ubuntu/Debian
 sudo apt update
 sudo apt install ansible -y
 ```
+
+![image alt](https://github.com/atulsharmadevops/90DaysOfDevOps/blob/411fa089f6f1aa566df35eee844368e1a4dfb346/2026/day-68/Screenshots/Screenshot%20(3228).png)
+![image alt](https://github.com/atulsharmadevops/90DaysOfDevOps/blob/411fa089f6f1aa566df35eee844368e1a4dfb346/2026/day-68/Screenshots/Screenshot%20(3230).png)
 
 ### Verify Installation
 Run:
@@ -333,6 +388,8 @@ Expected output includes:
 - Ansible version (e.g., `ansible [core 2.16.3]`)
 - Config file path (e.g., `/etc/ansible/ansible.cfg`)
 - Python version used
+
+![image alt](https://github.com/atulsharmadevops/90DaysOfDevOps/blob/411fa089f6f1aa566df35eee844368e1a4dfb346/2026/day-68/Screenshots/Screenshot%20(3233).png)
 
 ### Why is Ansible only needed on the control node?
 - Ansible is **agentless**.
@@ -345,7 +402,7 @@ The inventory tells Ansible which servers to manage and how to connect to them.
 ```bash
 mkdir ansible-practice && cd ansible-practice
 ```
-- This keeps your Ansible files organized.
+- This keeps our Ansible files organized.
 
 ### Create Inventory File `inventory.ini`:
 ```ini
@@ -360,31 +417,29 @@ db-server ansible_host=<PUBLIC_IP_3>
 
 [all:vars]
 ansible_user=ec2-user
-ansible_ssh_private_key_file=~/your-key.pem
+ansible_ssh_private_key_file=~/our-key.pem
 ```
 - Replace `<PUBLIC_IP_1>` etc. with the IPs Terraform printed.
 - Use `ec2-user` for Amazon Linux 2, or `ubuntu` for Ubuntu 22.04.
-- The `ansible_ssh_private_key_file` points to your `.pem` key.
+- The `ansible_ssh_private_key_file` points to our `.pem` key.
+
+![image alt](https://github.com/atulsharmadevops/90DaysOfDevOps/blob/411fa089f6f1aa566df35eee844368e1a4dfb346/2026/day-68/Screenshots/Screenshot%20(3237).png)
 
 ### Verify Connectivity
 Run:
 ```bash
 ansible all -i inventory.ini -m ping
 ```
-Expected output:
-```json
-web-server | SUCCESS => { "ping": "pong" }
-app-server | SUCCESS => { "ping": "pong" }
-db-server  | SUCCESS => { "ping": "pong" }
-```
+
+![image alt](https://github.com/atulsharmadevops/90DaysOfDevOps/blob/411fa089f6f1aa566df35eee844368e1a4dfb346/2026/day-68/Screenshots/Screenshot%20(3240).png)
 
 ### Troubleshooting if Ping Fails
 **SSH key permissions**
 ```bash
-chmod 400 ~/your-key.pem
+chmod 400 ~/our-key.pem
 ```
 **Security group**  
-- Ensure port 22 is open for your IP.
+- Ensure port 22 is open for our IP.
 
 **Correct user**
 - Check the `ansible_user` matches our AMI (`ec2-user` for Amazon Linux, `ubuntu` for Ubuntu)
@@ -401,10 +456,12 @@ ansible <target> -i <inventory> -m <module> -a "<arguments>" [options]
 ```bash
 ansible all -i inventory.ini -m command -a "uptime"
 ```
-- `all` → runs on every host in your inventory.
+- `all` → runs on every host in our inventory.
 - `-m command` → uses the `command` module (runs simple commands).
 - `-a "uptime"` → passes the command to execute.<br>
 Output shows how long each server has been running.
+
+![image alt](https://github.com/atulsharmadevops/90DaysOfDevOps/blob/411fa089f6f1aa566df35eee844368e1a4dfb346/2026/day-68/Screenshots/Screenshot%20(3243).png)
 
 ### Check Free Memory on Web Servers Only
 ```bash
@@ -413,12 +470,16 @@ ansible web -i inventory.ini -m command -a "free -h"
 - `web` → runs only on the `[web]` group.
 - `free -h` → shows memory usage in human‑readable format.
 
+![image alt](https://github.com/atulsharmadevops/90DaysOfDevOps/blob/411fa089f6f1aa566df35eee844368e1a4dfb346/2026/day-68/Screenshots/Screenshot%20(3246).png)
+
 ### Check Disk Space on All Servers
 ```bash
 ansible all -i inventory.ini -m command -a "df -h"
 ```
 - `df -h` → shows disk usage in human‑readable format.<br>
 Useful for monitoring storage across all nodes.
+
+![image alt](https://github.com/atulsharmadevops/90DaysOfDevOps/blob/411fa089f6f1aa566df35eee844368e1a4dfb346/2026/day-68/Screenshots/Screenshot%20(3249).png)
 
 ### Install a Package on Web Group
 ```bash
@@ -429,6 +490,8 @@ ansible web -i inventory.ini -m yum -a "name=git state=present" --become
 - `--become` → escalates privileges (like `sudo`).<br>
 Needed because installing packages requires root access.
 
+![image alt](https://github.com/atulsharmadevops/90DaysOfDevOps/blob/411fa089f6f1aa566df35eee844368e1a4dfb346/2026/day-68/Screenshots/Screenshot%20(3252).png)
+
 ### Copy a File to All Servers
 First, create a file:
 ```bash
@@ -438,11 +501,16 @@ Then copy it:
 ```bash
 ansible all -i inventory.ini -m copy -a "src=hello.txt dest=/tmp/hello.txt"
 ```
+
+![image alt](https://github.com/atulsharmadevops/90DaysOfDevOps/blob/411fa089f6f1aa566df35eee844368e1a4dfb346/2026/day-68/Screenshots/Screenshot%20(3255).png)
+
 Verify:
 ```bash
 ansible all -i inventory.ini -m command -a "cat /tmp/hello.txt"
 ```
 Each server should print: `Hello from Ansible`.
+
+![image alt](https://github.com/atulsharmadevops/90DaysOfDevOps/blob/411fa089f6f1aa566df35eee844368e1a4dfb346/2026/day-68/Screenshots/Screenshot%20(3259).png)
 
 ### What does `--become` do?  
 > `--become` escalates privileges to sudo. Required for any task that installs packages, manages services, or edits system files.
@@ -472,7 +540,9 @@ ansible_user=ec2-user
 ansible_ssh_private_key_file=~/your-key.pem
 ```
  
-`[application:children]` combines the `web` and `app` groups. `[all_servers:children]` combines everything. This lets you target multiple groups with a single name.
+`[application:children]` combines the `web` and `app` groups. `[all_servers:children]` combines everything. This lets us target multiple groups with a single name.
+
+![image alt](https://github.com/atulsharmadevops/90DaysOfDevOps/blob/411fa089f6f1aa566df35eee844368e1a4dfb346/2026/day-68/Screenshots/Screenshot%20(3262).png)
 
 ### Run Commands Against Groups
 Test connectivity:
@@ -482,6 +552,8 @@ ansible db           -i inventory.ini -m ping    # db server only
 ansible all_servers  -i inventory.ini -m ping    # all three servers
 ```
 Expected output: each host responds with `"ping": "pong"`.
+
+![image alt](https://github.com/atulsharmadevops/90DaysOfDevOps/blob/411fa089f6f1aa566df35eee844368e1a4dfb346/2026/day-68/Screenshots/Screenshot%20(3270).png)
 
 ### Use patterns for flexible targeting hosts
 | Pattern | Targets |
@@ -497,6 +569,7 @@ ansible 'web:app'  -i inventory.ini -m ping    # web or app
 ansible 'all:!db'  -i inventory.ini -m ping    # everyone except db
 ```
 
+![image alt](https://github.com/atulsharmadevops/90DaysOfDevOps/blob/411fa089f6f1aa566df35eee844368e1a4dfb346/2026/day-68/Screenshots/Screenshot%20(3275).png)
 
 ### Create `ansible.cfg`
 To avoid typing `-i inventory.ini` every time, create `ansible.cfg` in the same directory:
@@ -512,8 +585,10 @@ private_key_file = ~/your-key.pem
 | `inventory` | Default inventory file — no need for `-i inventory.ini` |
 | `host_key_checking = False` | Skips SSH fingerprint prompts for new hosts |
 | `remote_user` | Default login user for all connections |
-| `private_key_file` | Path to your `.pem` key |
- 
+| `private_key_file` | Path to our `.pem` key |
+
+![image alt](https://github.com/atulsharmadevops/90DaysOfDevOps/blob/411fa089f6f1aa566df35eee844368e1a4dfb346/2026/day-68/Screenshots/Screenshot%20(3278).png)
+
 With `ansible.cfg` in place, commands simplify to:
 ```bash
 ansible all -m ping
@@ -521,3 +596,5 @@ ansible web -m command -a "uptime"
 ansible-playbook site.yml
 ```
 If configured correctly, we’ll see SUCCESS without needing `-i inventory.ini`.
+
+![image alt](https://github.com/atulsharmadevops/90DaysOfDevOps/blob/411fa089f6f1aa566df35eee844368e1a4dfb346/2026/day-68/Screenshots/Screenshot%20(3284).png)
