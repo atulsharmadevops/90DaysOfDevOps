@@ -1,5 +1,5 @@
 # Ansible Playbooks and Modules
-A hands-on guide to writing your first playbook, understanding playbook structure, mastering essential modules, using handlers, previewing changes safely, and orchestrating multiple server groups in one playbook.
+A hands-on guide to writing our first playbook, understanding playbook structure, mastering essential modules, using handlers, previewing changes safely, and orchestrating multiple server groups in one playbook.
  
 ## Table of Contents
 - [Your First Playbook](#1-your-first-playbook)
@@ -47,12 +47,16 @@ vim install-nginx.yml
 ansible-playbook install-nginx.yml
 ```
 - Watch the output — tasks show `changed`, `ok`, or `failed`.
- 
+
+![image alt](https://github.com/atulsharmadevops/90DaysOfDevOps/blob/90dba8966dc7a823e6bdbb63fd1fb8ac4edf5bd9/2026/day-69/Screenshots/Screenshot%20(3290).png)
+
 ### Run it a **second time** without changing anything:
 ```bash
 ansible-playbook install-nginx.yml
 ```
- 
+
+![image alt](https://github.com/atulsharmadevops/90DaysOfDevOps/blob/90dba8966dc7a823e6bdbb63fd1fb8ac4edf5bd9/2026/day-69/Screenshots/Screenshot%20(3291).png)
+
 Tasks now show `ok` instead of `changed`. This is **idempotency** - Ansible compares the current state of each resource against the desired state and only makes changes when there is a difference.
  
 | Run | Expected task status | Why |
@@ -61,11 +65,13 @@ Tasks now show `ok` instead of `changed`. This is **idempotency** - Ansible comp
 | Second | `ok` | Nginx is already installed and running; file already in place |
  
 ### Verify Deployment
-Confirm Nginx is serving your custom page.
+Confirm Nginx is serving our custom page.
 ```bash
 curl <web-server-public-ip>
 ```
-- We should see: `<h1>Deployed by Ansible - TerraWeek Server</h1>`
+
+![image alt](https://github.com/atulsharmadevops/90DaysOfDevOps/blob/90dba8966dc7a823e6bdbb63fd1fb8ac4edf5bd9/2026/day-69/Screenshots/Screenshot%20(3294).png)
+
 - If the page doesn't load, check that `port 80` is open in the EC2 security group.
 
 ## 2. Understand the Playbook Structure
@@ -99,7 +105,7 @@ Answer:
     - A **play** maps a group of hosts to a set of tasks. Think of it as the big picture: “On these servers, do these things.”
     - A **task** is a single unit of work inside a play, executed by a module (e.g., install a package, copy a file).
 
-2. Can you have multiple plays in one playbook?
+2. Can we have multiple plays in one playbook?
     - Yes, one playbook can contain multiple plays. Example: one play for web servers, another for database servers, all in the same YAML file.
 
 3. What does `become: true` do at the play level vs the task level?
@@ -108,7 +114,7 @@ Answer:
 
 4. What happens if a task fails -- do remaining tasks still run?
     - By default, if a task fails, Ansible stops executing further tasks on that host.
-    - You can override with `ignore_errors: true` if you want the play to continue despite failure.
+    - We can override with `ignore_errors: true` if we want the play to continue despite failure.
 
 ## 3. Learn the Essential Modules
 ### Create supporting files
@@ -122,7 +128,9 @@ mkdir files
 setting1 = true
 setting2 = 42
 ```
- 
+
+![image alt](https://github.com/atulsharmadevops/90DaysOfDevOps/blob/90dba8966dc7a823e6bdbb63fd1fb8ac4edf5bd9/2026/day-69/Screenshots/Screenshot%20(3302).png)
+
 ### `essential-modules.yml`
 Practice each of these modules by writing a playbook in our Ansible project directory with multiple tasks:
 ```yaml
@@ -137,9 +145,9 @@ Practice each of these modules by writing a playbook in our Ansible project dire
       yum:          # use apt if Ubuntu
         name:
           - git
-          - curl
           - wget
           - tree
+          - nginx
         state: present
  
     # 2. Service management
@@ -191,6 +199,7 @@ Practice each of these modules by writing a playbook in our Ansible project dire
         line: 'TZ=Asia/Kolkata'
         create: true
 ```
+
 ### Essential module reference
 | Module | What it does | Key arguments |
 |---|---|---|
@@ -203,6 +212,8 @@ Practice each of these modules by writing a playbook in our Ansible project dire
 | `lineinfile` | Ensure a specific line exists (or doesn't) in a file | `path`, `line`, `regexp`, `create` |
 | `debug` | Print a variable or message to the terminal | `var`, `msg` |
 
+![image alt](https://github.com/atulsharmadevops/90DaysOfDevOps/blob/90dba8966dc7a823e6bdbb63fd1fb8ac4edf5bd9/2026/day-69/Screenshots/Screenshot%20(3308).png)
+
 ### Run the Playbook
 Execute:
 ```bash
@@ -213,12 +224,16 @@ Watch the output:
 - **ok** → already in desired state.
 - **failed** → error occurred.
 
-### What is the difference between `command` and `shell`? When should you use each?
+![image alt](https://github.com/atulsharmadevops/90DaysOfDevOps/blob/90dba8966dc7a823e6bdbb63fd1fb8ac4edf5bd9/2026/day-69/Screenshots/Screenshot%20(3310).png)
+![image alt](https://github.com/atulsharmadevops/90DaysOfDevOps/blob/90dba8966dc7a823e6bdbb63fd1fb8ac4edf5bd9/2026/day-69/Screenshots/Screenshot%20(3313).png)
+![image alt](https://github.com/atulsharmadevops/90DaysOfDevOps/blob/90dba8966dc7a823e6bdbb63fd1fb8ac4edf5bd9/2026/day-69/Screenshots/Screenshot%20(3316).png)
+
+### What is the difference between `command` and `shell`? When should we use each?
 - **command**: Runs a binary directly, no shell features. Safer, avoids injection risks. Example: `command: df -h`.
 - **shell**: Runs inside a shell, allows pipes (`|`), redirects (`>`), variables. Example: `shell: ps aux | wc -l`.
-- **Rule of thumb**: Use `command` whenever possible. Use `shell` only when you need shell features.
+- **Rule of thumb**: Use `command` whenever possible. Use `shell` only when we need shell features.
 
-This task shows you the **core modules** that cover 80% of automation needs:
+This task shows us the **core modules** that cover 80% of automation needs:
 - Package management
 - Service control
 - File copy and directory creation
@@ -267,6 +282,8 @@ A handler is a task that runs **only when notified** by another task. This preve
         state: restarted
 ```
 
+![image alt](https://github.com/atulsharmadevops/90DaysOfDevOps/blob/90dba8966dc7a823e6bdbb63fd1fb8ac4edf5bd9/2026/day-69/Screenshots/Screenshot%20(3319).png)
+
 ### Create Supporting Config File
 Create `files/nginx.conf` with a basic Nginx configuration, for example:
 ```nginx
@@ -283,17 +300,24 @@ http {
 }
 ```
 
+![image alt](https://github.com/atulsharmadevops/90DaysOfDevOps/blob/90dba8966dc7a823e6bdbb63fd1fb8ac4edf5bd9/2026/day-69/Screenshots/Screenshot%20(3321).png)
+
 ### Run the Playbook Twice
 Execute:
 ```bash
 ansible-playbook nginx-config.yml
 ```
+
+![image alt](https://github.com/atulsharmadevops/90DaysOfDevOps/blob/90dba8966dc7a823e6bdbb63fd1fb8ac4edf5bd9/2026/day-69/Screenshots/Screenshot%20(3323).png)
+
 ### Handler behavior across runs
 | Run | Config file changed? | Handler triggered? | Result |
 |---|---|---|---|
 | First | ✓ Yes (new file deployed) | ✓ Yes | Nginx restarts |
 | Second | ✗ No (file identical) | ✗ No | Nginx stays running — no restart |
  
+![image alt](https://github.com/atulsharmadevops/90DaysOfDevOps/blob/90dba8966dc7a823e6bdbb63fd1fb8ac4edf5bd9/2026/day-69/Screenshots/Screenshot%20(3326).png)
+
 ### Key handler rules
 - Handlers run **at the end of the play**, not immediately when notified
 - If the same handler is notified multiple times in one play, it runs **only once**
@@ -303,6 +327,8 @@ ansible-playbook nginx-config.yml
 # Verify Nginx is active after both runs
 systemctl status nginx
 ```
+
+![image alt](https://github.com/atulsharmadevops/90DaysOfDevOps/blob/90dba8966dc7a823e6bdbb63fd1fb8ac4edf5bd9/2026/day-69/Screenshots/Screenshot%20(3333).png)
 
 ## 5. Dry Run, Diff, and Verbosity
 Before running playbooks on production, always preview changes first.
@@ -316,24 +342,48 @@ ansible-playbook install-nginx.yml --check
 - Output shows what would change (marked as `changed`) but doesn’t actually apply changes.
 - Useful for previewing effects without risk.
 
+![image alt](https://github.com/atulsharmadevops/90DaysOfDevOps/blob/90dba8966dc7a823e6bdbb63fd1fb8ac4edf5bd9/2026/day-69/Screenshots/Screenshot%20(3336).png)
+
 ### Diff Mode
 Combine check mode with diff:
 ```bash
 ansible-playbook nginx-config.yml --check --
 ```
 - Shows **file differences** line by line.
-- Example: if `nginx.conf` changes, you’ll see old vs new content.
-- Critical for config files - you know exactly what will be replaced.
+- Example: if `nginx.conf` changes, we’ll see old vs new content.
+- Critical for config files - we know exactly what will be replaced.
+
+![image alt](https://github.com/atulsharmadevops/90DaysOfDevOps/blob/90dba8966dc7a823e6bdbb63fd1fb8ac4edf5bd9/2026/day-69/Screenshots/Screenshot%20(3339).png)
+![image alt](https://github.com/atulsharmadevops/90DaysOfDevOps/blob/90dba8966dc7a823e6bdbb63fd1fb8ac4edf5bd9/2026/day-69/Screenshots/Screenshot%20(3342).png)
+![image alt](https://github.com/atulsharmadevops/90DaysOfDevOps/blob/90dba8966dc7a823e6bdbb63fd1fb8ac4edf5bd9/2026/day-69/Screenshots/Screenshot%20(3345).png)
 
 ### Verbosity Levels
 Increase output detail for debugging:
 ```bash
 ansible-playbook install-nginx.yml -v    # basic verbose
+```
+
+![image alt](https://github.com/atulsharmadevops/90DaysOfDevOps/blob/90dba8966dc7a823e6bdbb63fd1fb8ac4edf5bd9/2026/day-69/Screenshots/Screenshot%20(3347).png)
+![image alt](https://github.com/atulsharmadevops/90DaysOfDevOps/blob/90dba8966dc7a823e6bdbb63fd1fb8ac4edf5bd9/2026/day-69/Screenshots/Screenshot%20(3349).png)
+
+- Use `-v` when we want to see what each task is 
+
+```bash
 ansible-playbook install-nginx.yml -vv   # more detail
+```
+
+![image alt](https://github.com/atulsharmadevops/90DaysOfDevOps/blob/90dba8966dc7a823e6bdbb63fd1fb8ac4edf5bd9/2026/day-69/Screenshots/Screenshot%20(3351).png)
+![image alt](https://github.com/atulsharmadevops/90DaysOfDevOps/blob/90dba8966dc7a823e6bdbb63fd1fb8ac4edf5bd9/2026/day-69/Screenshots/Screenshot%20(3353).png)
+
+- Use `-vv` when we want to see module arguments and return values
+
+```bash
 ansible-playbook install-nginx.yml -vvv  # connection debugging
 ```
-- Use `-v` when you want to see what each task is 
-- Use `-vv` when you want to see module arguments and return values
+
+![image alt](https://github.com/atulsharmadevops/90DaysOfDevOps/blob/90dba8966dc7a823e6bdbb63fd1fb8ac4edf5bd9/2026/day-69/Screenshots/Screenshot%20(3355).png)
+![image alt](https://github.com/atulsharmadevops/90DaysOfDevOps/blob/90dba8966dc7a823e6bdbb63fd1fb8ac4edf5bd9/2026/day-69/Screenshots/Screenshot%20(3357).png)
+
 - Use `-vvv` if troubleshooting SSH or connection issues.
 
 ### Limit Hosts
@@ -343,6 +393,8 @@ ansible-playbook install-nginx.yml --limit web-server
 ```
 - Runs playbook only on `web-server` host.
 - Useful for testing changes on one machine before rolling out cluster‑wide.
+
+![image alt](https://github.com/atulsharmadevops/90DaysOfDevOps/blob/90dba8966dc7a823e6bdbb63fd1fb8ac4edf5bd9/2026/day-69/Screenshots/Screenshot%20(3359).png)
 
 ### List Hosts and Tasks
 Preview what would run:
@@ -354,10 +406,12 @@ ansible-playbook install-nginx.yml --list-tasks
 - `--list-tasks`: shows which tasks will run.
 - No changes are applied - pure preview.
 
+![image alt](https://github.com/atulsharmadevops/90DaysOfDevOps/blob/90dba8966dc7a823e6bdbb63fd1fb8ac4edf5bd9/2026/day-69/Screenshots/Screenshot%20(3365).png)
+
 ### Why is `--check --diff` the most important flag combination for production use?
 - **Check mode** ensures no changes are applied - safe preview.
 - **Diff mode** shows exactly what files/configs would change.
-- Together, they give you a **risk‑free, detailed preview** of changes before touching production.
+- Together, they give us a **risk‑free, detailed preview** of changes before touching production.
 - Prevents accidental overwrites, service downtime, or misconfigurations.
 
 ## 6. Multiple Plays in One Playbook
@@ -414,6 +468,8 @@ Write `multi-play.yml` with separate plays for each server group:
         mode: '0700'
 ```
 
+![image alt](https://github.com/atulsharmadevops/90DaysOfDevOps/blob/90dba8966dc7a823e6bdbb63fd1fb8ac4edf5bd9/2026/day-69/Screenshots/Screenshot%20(3381).png)
+
 ### Run the Playbook
 Execute:
 ```bash
@@ -425,10 +481,13 @@ ansible-playbook multi-play.yml
 
 Each play runs independently, targeting only its inventory group.
 
+![image alt](https://github.com/atulsharmadevops/90DaysOfDevOps/blob/90dba8966dc7a823e6bdbb63fd1fb8ac4edf5bd9/2026/day-69/Screenshots/Screenshot%20(3368).png)
+![image alt](https://github.com/atulsharmadevops/90DaysOfDevOps/blob/90dba8966dc7a823e6bdbb63fd1fb8ac4edf5bd9/2026/day-69/Screenshots/Screenshot%20(3383).png)
+
 ### Watch the Output
-- You’ll see three separate sections in the output, one per play.
+- We’ll see three separate sections in the output, one per play.
 - Tasks show `changed` or `ok` depending on whether something was modified.
-- Example: On web servers, you’ll see Nginx installed and started. On db servers, you’ll see MySQL client installed.
+- Example: On web servers, we’ll see Nginx installed and started. On db servers, we’ll see MySQL client installed.
 
 ### Verify Results
 On each group of servers:
@@ -438,11 +497,15 @@ On each group of servers:
     ```
     - Nginx should be active.
 
+  ![image alt](https://github.com/atulsharmadevops/90DaysOfDevOps/blob/90dba8966dc7a823e6bdbb63fd1fb8ac4edf5bd9/2026/day-69/Screenshots/Screenshot%20(3388).png)
+
 - **App servers:**
     ```bash
     ls -ld /opt/app
     ```
     - Directory exists with mode `0755`.
+
+  ![image alt](https://github.com/atulsharmadevops/90DaysOfDevOps/blob/90dba8966dc7a823e6bdbb63fd1fb8ac4edf5bd9/2026/day-69/Screenshots/Screenshot%20(3391).png)
 
 - **Database servers:**
     ```bash
@@ -450,6 +513,8 @@ On each group of servers:
     ls -ld /var/lib/appdata
     ```
     - MySQL client installed, directory exists with mode `0700`.
+
+  ![image alt](https://github.com/atulsharmadevops/90DaysOfDevOps/blob/90dba8966dc7a823e6bdbb63fd1fb8ac4edf5bd9/2026/day-69/Screenshots/Screenshot%20(3395).png)
 
 ### Multi-play output structure
 The output shows three clearly labelled sections — one `PLAY` block per play, each with its own `TASK` entries and a `PLAY RECAP` summary line. This makes it easy to see at a glance which changes were applied to which server group.
