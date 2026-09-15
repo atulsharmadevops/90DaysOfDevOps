@@ -1,5 +1,5 @@
 # Ansible - Variables, Facts, Conditionals and Loops
-Our playbooks work, but they are static -- same packages, same config, same behavior on every server. Real infrastructure is not like that. Web servers need Nginx, app servers need Node.js, production gets more memory than dev. Today we make your playbooks smart.
+Our playbooks work, but they are static — same packages, same config, same behavior on every server. Real infrastructure is not like that. Web servers need Nginx, app servers need Node.js, production gets more memory than dev. Today we make our playbooks smart.
 
 Variables, facts, conditionals, and loops turn a rigid script into flexible automation that adapts to each host, each group, and each environment.
 
@@ -52,6 +52,8 @@ vim variables-demo.yml
         state: present
 ```
 
+![image alt](https://github.com/atulsharmadevops/90DaysOfDevOps/blob/ea7fa3e3fc9a89fbf6a28bc298db06e488a43ee2/2026/day-70/Screenshots/Screenshot%20(3414).png)
+
 ### Run Playbook with Defaults
 ```bash
 #Execute the playbook to see variables resolve.
@@ -61,6 +63,9 @@ ansible-playbook variables-demo.yml
 - Verify directory `/opt/terraweek-app` is created
 - Confirm packages git, curl, wget are installed
 
+![image alt](https://github.com/atulsharmadevops/90DaysOfDevOps/blob/ea7fa3e3fc9a89fbf6a28bc298db06e488a43ee2/2026/day-70/Screenshots/Screenshot%20(3416).png)
+![image alt](https://github.com/atulsharmadevops/90DaysOfDevOps/blob/ea7fa3e3fc9a89fbf6a28bc298db06e488a43ee2/2026/day-70/Screenshots/Screenshot%20(3423).png)
+
 ### Override Variables via CLI
 ```bash
 #Extra vars (-e) override playbook defaults.
@@ -69,6 +74,9 @@ ansible-playbook variables-demo.yml -e "app_name=my-custom-app app_port=9090"
 - Debug output should now show `Deploying my-custom-app on port 9090 to /opt/my-custom-app`
 - Directory `/opt/my-custom-app` created
 - Packages installed remain the same
+
+![image alt](https://github.com/atulsharmadevops/90DaysOfDevOps/blob/ea7fa3e3fc9a89fbf6a28bc298db06e488a43ee2/2026/day-70/Screenshots/Screenshot%20(3427).png)
+![image alt](https://github.com/atulsharmadevops/90DaysOfDevOps/blob/ea7fa3e3fc9a89fbf6a28bc298db06e488a43ee2/2026/day-70/Screenshots/Screenshot%20(3429).png)
 
 ### Does the CLI variable override the playbook variable?
 Check that CLI overrides beat playbook vars.
@@ -105,7 +113,9 @@ ansible-practice/
     └── site.yml
 ```
 
-### Define your inventory
+![image alt](https://github.com/atulsharmadevops/90DaysOfDevOps/blob/ea7fa3e3fc9a89fbf6a28bc298db06e488a43ee2/2026/day-70/Screenshots/Screenshot%20(3435).png)
+
+### Define our inventory
 `ansible-practice/inventory.ini`:
 ```ini
 [web]
@@ -114,8 +124,10 @@ web-server ansible_host=1.2.3.4 ansible_user=ec2-user
 [db]
 db-server ansible_host=5.6.7.8 ansible_user=ec2-user
 ```
-- Replace IPs with your actual servers.
+- Replace IPs with our actual servers.
 - Groups: `web` and `db`.
+
+![image alt](https://github.com/atulsharmadevops/90DaysOfDevOps/blob/ea7fa3e3fc9a89fbf6a28bc298db06e488a43ee2/2026/day-70/Screenshots/Screenshot%20(3436).png)
 
 ### Configure Ansible defaults
 `ansible-practice/ansible.cfg`:
@@ -126,6 +138,8 @@ remote_user = ec2-user
 host_key_checking = False
 ```
 - This avoids typing `-i inventory.ini` every time.
+
+![image alt](https://github.com/atulsharmadevops/90DaysOfDevOps/blob/ea7fa3e3fc9a89fbf6a28bc298db06e488a43ee2/2026/day-70/Screenshots/Screenshot%20(3439).png)
 
 ### Create `group_vars` files
 - `group_vars/all.yml` — applied to every host:
@@ -139,6 +153,8 @@ host_key_checking = False
     - tree
     ```
 
+  ![image alt](https://github.com/atulsharmadevops/90DaysOfDevOps/blob/ea7fa3e3fc9a89fbf6a28bc298db06e488a43ee2/2026/day-70/Screenshots/Screenshot%20(3443).png)
+
 - `group_vars/web.yml` — applied to `[web]` group only:
     ```yaml
     ---
@@ -148,6 +164,8 @@ host_key_checking = False
     - nginx
     ```
 
+  ![image alt](https://github.com/atulsharmadevops/90DaysOfDevOps/blob/ea7fa3e3fc9a89fbf6a28bc298db06e488a43ee2/2026/day-70/Screenshots/Screenshot%20(3444).png)
+
 - `group_vars/db.yml` — applied to `[db]` group only:
     ```yaml
     ---
@@ -155,6 +173,8 @@ host_key_checking = False
     db_packages:
     - mysql-server
     ```
+
+  ![image alt](https://github.com/atulsharmadevops/90DaysOfDevOps/blob/ea7fa3e3fc9a89fbf6a28bc298db06e488a43ee2/2026/day-70/Screenshots/Screenshot%20(3445).png)
 
 ### Create `host_vars` file
 `host_vars/web-server.yml` — overrides for one specific host:
@@ -164,6 +184,8 @@ max_connections: 2000
 custom_message: "This is the primary web server"
 ```
 > `host_vars` overrides `group_vars`. The `web-server` host will have `max_connections = 2000`, while all other web hosts have `max_connections = 1000`.
+
+![image alt](https://github.com/atulsharmadevops/90DaysOfDevOps/blob/ea7fa3e3fc9a89fbf6a28bc298db06e488a43ee2/2026/day-70/Screenshots/Screenshot%20(3441).png)
 
 ### Write the playbook
 `playbooks/site.yml`:
@@ -193,6 +215,8 @@ custom_message: "This is the primary web server"
         msg: "{{ custom_message }}"
 ```
 
+![image alt](https://github.com/atulsharmadevops/90DaysOfDevOps/blob/ea7fa3e3fc9a89fbf6a28bc298db06e488a43ee2/2026/day-70/Screenshots/Screenshot%20(3448).png)
+
 ### Run the playbook
 ```bash
 cd ansible-practice
@@ -203,6 +227,9 @@ ansible-playbook playbooks/site.yml
 - On **web-server host** → max_connections shows `2000` (host_vars override).
 - On **db group** → only common tasks run, db vars available if referenced.
 
+![image alt](https://github.com/atulsharmadevops/90DaysOfDevOps/blob/ea7fa3e3fc9a89fbf6a28bc298db06e488a43ee2/2026/day-70/Screenshots/Screenshot%20(3452).png)
+![image alt](https://github.com/atulsharmadevops/90DaysOfDevOps/blob/ea7fa3e3fc9a89fbf6a28bc298db06e488a43ee2/2026/day-70/Screenshots/Screenshot%20(3453).png)
+
 ### Verify variable precedence
 Run with CLI override:
 ```bash
@@ -210,6 +237,9 @@ ansible-playbook playbooks/site.yml -e "app_env=production"
 ```
 - Output should show `Environment: production`.
 - Confirms **extra vars (-e)** override everything.
+
+![image alt](https://github.com/atulsharmadevops/90DaysOfDevOps/blob/ea7fa3e3fc9a89fbf6a28bc298db06e488a43ee2/2026/day-70/Screenshots/Screenshot%20(3456).png)
+![image alt](https://github.com/atulsharmadevops/90DaysOfDevOps/blob/ea7fa3e3fc9a89fbf6a28bc298db06e488a43ee2/2026/day-70/Screenshots/Screenshot%20(3459).png)
 
 ### What each host receives 
 | Host | `max_connections` | Source | `app_env` |
@@ -240,6 +270,9 @@ Facts are variables automatically gathered from managed nodes at the start of ev
 ansible web-server -m setup
 ```
 
+![image alt](https://github.com/atulsharmadevops/90DaysOfDevOps/blob/ea7fa3e3fc9a89fbf6a28bc298db06e488a43ee2/2026/day-70/Screenshots/Screenshot%20(3462).png)
+![image alt](https://github.com/atulsharmadevops/90DaysOfDevOps/blob/ea7fa3e3fc9a89fbf6a28bc298db06e488a43ee2/2026/day-70/Screenshots/Screenshot%20(3464).png)
+
 ### Filter specific facts:
 ```bash
 ansible web-server -m setup -a "filter=ansible_os_family"
@@ -248,6 +281,11 @@ ansible web-server -m setup -a "filter=ansible_memtotal_mb"
 ansible web-server -m setup -a "filter=ansible_default_ipv4"
 ```
 - This shows us OS family, distribution, memory, and IP address.
+
+![image alt](https://github.com/atulsharmadevops/90DaysOfDevOps/blob/ea7fa3e3fc9a89fbf6a28bc298db06e488a43ee2/2026/day-70/Screenshots/Screenshot%20(3465).png)
+![image alt](https://github.com/atulsharmadevops/90DaysOfDevOps/blob/ea7fa3e3fc9a89fbf6a28bc298db06e488a43ee2/2026/day-70/Screenshots/Screenshot%20(3467).png)
+![image alt](https://github.com/atulsharmadevops/90DaysOfDevOps/blob/ea7fa3e3fc9a89fbf6a28bc298db06e488a43ee2/2026/day-70/Screenshots/Screenshot%20(3469).png)
+![image alt](https://github.com/atulsharmadevops/90DaysOfDevOps/blob/ea7fa3e3fc9a89fbf6a28bc298db06e488a43ee2/2026/day-70/Screenshots/Screenshot%20(3471).png)
 
 ### Use Facts in a Playbook - Create `facts-demo.yml`:
 ```yaml
@@ -268,12 +306,17 @@ ansible web-server -m setup -a "filter=ansible_default_ipv4"
         var: ansible_interfaces
 ```
 
+![image alt](https://github.com/atulsharmadevops/90DaysOfDevOps/blob/ea7fa3e3fc9a89fbf6a28bc298db06e488a43ee2/2026/day-70/Screenshots/Screenshot%20(3477).png)
+
 ### Run the playbook
 ```bash
 ansible-playbook facts-demo.yml
 ```
 - Output prints hostname, OS, RAM, IP for each host.
 - Second task dumps all interfaces (eth0, lo, etc.).
+
+![image alt](https://github.com/atulsharmadevops/90DaysOfDevOps/blob/ea7fa3e3fc9a89fbf6a28bc298db06e488a43ee2/2026/day-70/Screenshots/Screenshot%20(3479).png)
+![image alt](https://github.com/atulsharmadevops/90DaysOfDevOps/blob/ea7fa3e3fc9a89fbf6a28bc298db06e488a43ee2/2026/day-70/Screenshots/Screenshot%20(3483).png)
 
 ### Verify
 Check that values match reality:
@@ -284,7 +327,7 @@ Check that values match reality:
 
 Interfaces list should include loopback + primary NIC.
 
-### Name five facts you would use in real playbooks and why.
+### Name five facts we would use in real playbooks and why.
 **Ans.** Five useful facts in real playbooks:
 - **ansible_distribution** → Run OS‑specific tasks (e.g., `apt` vs `yum`).
 - **ansible_memtotal_mb** → Apply memory‑based tuning (swap, JVM heap).
@@ -353,10 +396,16 @@ Inside our `playbooks/` directory, create `conditional-demo.yml`:
       when: "'web' in group_names or 'app' in group_names"
 ```
 
+![image alt](https://github.com/atulsharmadevops/90DaysOfDevOps/blob/ea7fa3e3fc9a89fbf6a28bc298db06e488a43ee2/2026/day-70/Screenshots/Screenshot%20(3517).png)
+
 ### Run the playbook
 ```bash
 ansible-playbook playbooks/conditional-demo.yml
 ```
+
+![image alt](https://github.com/atulsharmadevops/90DaysOfDevOps/blob/ea7fa3e3fc9a89fbf6a28bc298db06e488a43ee2/2026/day-70/Screenshots/Screenshot%20(3492).png)
+![image alt](https://github.com/atulsharmadevops/90DaysOfDevOps/blob/ea7fa3e3fc9a89fbf6a28bc298db06e488a43ee2/2026/day-70/Screenshots/Screenshot%20(3496).png)
+![image alt](https://github.com/atulsharmadevops/90DaysOfDevOps/blob/ea7fa3e3fc9a89fbf6a28bc298db06e488a43ee2/2026/day-70/Screenshots/Screenshot%20(3498).png)
 
 ### Observe the output
 On **web servers**:
@@ -396,7 +445,7 @@ SSH into different hosts and confirm:
 - **Built‑in variable:** `group_names` contains all groups the host belongs to.
 - **Multiple conditions:** Use list for AND, use `or` for OR.
 
-This is how you prevent **unnecessary installs** and tailor tasks per host.
+This is how we prevent **unnecessary installs** and tailor tasks per host.
 
 ## 5. Loops
 Loops eliminate repetition. Instead of writing the same task 10 times with different values, define one task and iterate over a list.
@@ -456,10 +505,15 @@ Inside our `playbooks/` directory, create `loops-demo.yml`:
       loop: "{{ users }}"
 ```
 
+![image alt](https://github.com/atulsharmadevops/90DaysOfDevOps/blob/ea7fa3e3fc9a89fbf6a28bc298db06e488a43ee2/2026/day-70/Screenshots/Screenshot%20(3521).png)
+
 ### Run the playbook
 ```bash
 ansible-playbook playbooks/loops-demo.yml
 ```
+
+![image alt](https://github.com/atulsharmadevops/90DaysOfDevOps/blob/ea7fa3e3fc9a89fbf6a28bc298db06e488a43ee2/2026/day-70/Screenshots/Screenshot%20(3500).png)
+![image alt](https://github.com/atulsharmadevops/90DaysOfDevOps/blob/ea7fa3e3fc9a89fbf6a28bc298db06e488a43ee2/2026/day-70/Screenshots/Screenshot%20(3503).png)
 
 ### Observe the output
 - **User creation:** Each user (`deploy`, `monitor`, `appuser`) is created in its group.
@@ -481,6 +535,13 @@ id deploy && id monitor && id appuser    # users created
 ls -ld /opt/app/*                        # directories created with 0755
 rpm -q git curl unzip jq                 # packages installed (RHEL/CentOS)
 ```
+`web-server`
+
+![image alt](https://github.com/atulsharmadevops/90DaysOfDevOps/blob/ea7fa3e3fc9a89fbf6a28bc298db06e488a43ee2/2026/day-70/Screenshots/Screenshot%20(3508).png)
+
+`db-server`
+
+![image alt](https://github.com/atulsharmadevops/90DaysOfDevOps/blob/ea7fa3e3fc9a89fbf6a28bc298db06e488a43ee2/2026/day-70/Screenshots/Screenshot%20(3512).png)
 
 ### What is the difference between `loop` and the older `with_items`?
 - **Loop syntax:** `loop:` is the modern, unified way to iterate.
@@ -541,10 +602,16 @@ Inside our `playbooks/` directory, create `server-report.yml`:
       become: true
 ```
 
+![image alt](https://github.com/atulsharmadevops/90DaysOfDevOps/blob/ea7fa3e3fc9a89fbf6a28bc298db06e488a43ee2/2026/day-70/Screenshots/Screenshot%20(3515).png)
+
 ### Run the playbook
 ```bash
 ansible-playbook playbooks/server-report.yml
 ```
+
+![image alt](https://github.com/atulsharmadevops/90DaysOfDevOps/blob/ea7fa3e3fc9a89fbf6a28bc298db06e488a43ee2/2026/day-70/Screenshots/Screenshot%20(3528).png)
+![image alt](https://github.com/atulsharmadevops/90DaysOfDevOps/blob/ea7fa3e3fc9a89fbf6a28bc298db06e488a43ee2/2026/day-70/Screenshots/Screenshot%20(3531).png)
+![image alt](https://github.com/atulsharmadevops/90DaysOfDevOps/blob/ea7fa3e3fc9a89fbf6a28bc298db06e488a43ee2/2026/day-70/Screenshots/Screenshot%20(3534).png)
 
 ### Observe the output
 - **Disk check:** `disk_result` captures `df -h /`.
@@ -559,6 +626,13 @@ SSH into a host:
 ```bash
 cat /tmp/server-report-<hostname>.txt
 ```
+`web-server`
+
+![image alt](https://github.com/atulsharmadevops/90DaysOfDevOps/blob/ea7fa3e3fc9a89fbf6a28bc298db06e488a43ee2/2026/day-70/Screenshots/Screenshot%20(3539).png)
+
+`db-server`
+
+![image alt](https://github.com/atulsharmadevops/90DaysOfDevOps/blob/ea7fa3e3fc9a89fbf6a28bc298db06e488a43ee2/2026/day-70/Screenshots/Screenshot%20(3544).png)
 
 Confirm:
 - Hostname matches inventory.
