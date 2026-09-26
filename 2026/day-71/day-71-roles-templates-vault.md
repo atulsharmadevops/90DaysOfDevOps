@@ -41,6 +41,8 @@ server {
 }
 ```
 
+![image alt](https://github.com/atulsharmadevops/90DaysOfDevOps/blob/f12d1d232d9d0f4d0a649d98a374c7e57be9a3b0/2026/day-71/Screenshots/Screenshot%20(3552).png)
+
 ### Create the Playbook
  `template-demo.yml`
 ```yaml
@@ -54,7 +56,7 @@ server {
 
   tasks:
     - name: Install Nginx
-      yum:
+      yum:                                          #use apt if running Ubuntu
         name: nginx
         state: present
 
@@ -85,11 +87,17 @@ server {
 ```
 This playbook installs Nginx, creates directories, and deploys the template.
 
+![image alt](https://github.com/atulsharmadevops/90DaysOfDevOps/blob/f12d1d232d9d0f4d0a649d98a374c7e57be9a3b0/2026/day-71/Screenshots/Screenshot%20(3556).png)
+
 ### Run the Playbook
 ```bash
 #Execute the playbook to apply changes and render the template.
 ansible-playbook template-demo.yml --diff
 ```
+
+![image alt](https://github.com/atulsharmadevops/90DaysOfDevOps/blob/f12d1d232d9d0f4d0a649d98a374c7e57be9a3b0/2026/day-71/Screenshots/Screenshot%20(3568).png)
+![image alt](https://github.com/atulsharmadevops/90DaysOfDevOps/blob/f12d1d232d9d0f4d0a649d98a374c7e57be9a3b0/2026/day-71/Screenshots/Screenshot%20(3572).png)
+
 The `--diff` flag shows line-by-line config changes. On the first run, Nginx is installed, the config is created, and the handler triggers a restart. On subsequent runs, unchanged tasks report `ok`, demonstrating **idempotency**.
 
 ### Verify the Rendered Config
@@ -98,6 +106,9 @@ Check that variables were replaced with actual values on the server.
 ##SSH into web server
 cat /etc/nginx/conf.d/terraweek-app.conf
 ```
+
+![image alt](https://github.com/atulsharmadevops/90DaysOfDevOps/blob/f12d1d232d9d0f4d0a649d98a374c7e57be9a3b0/2026/day-71/Screenshots/Screenshot%20(3579).png)
+
 Confirm that:
 - `listen 80;` and the correct `server_name` are present
 - Root path resolves to `/var/www/terraweek-app`
@@ -126,12 +137,15 @@ roles/
         └── main.yml        # Role metadata and dependencies
 ```
  
-Every subdirectory contains a `main.yml` that Ansible loads automatically. You only need to create the directories relevant to your role.
+Every subdirectory contains a `main.yml` that Ansible loads automatically. We only need to create the directories relevant to our role.
 
 ### Generate a Role Skeleton
 ```bash
 ansible-galaxy init roles/webserver
 ```
+
+![image alt](https://github.com/atulsharmadevops/90DaysOfDevOps/blob/f12d1d232d9d0f4d0a649d98a374c7e57be9a3b0/2026/day-71/Screenshots/Screenshot%20(3584).png)
+
 This command scaffolds a **standardized directory structure** under `roles/webserver/`. We’ll see folders like `tasks/`, `handlers/`, `templates/`, `files/`, `vars/`, `defaults/`, and `meta/`.
 
 ### Explore the Structure
@@ -145,7 +159,9 @@ Here’s what each directory is for:
 - **meta** → Metadata like role dependencies, author info, supported platforms.
 
 ### Read the README
-Inside `roles/webserver/README.md`, Galaxy generates a starter doc explaining how to use the role. This is a good place to document what your role does, required variables, and example usage.
+Inside `roles/webserver/README.md`, Galaxy generates a starter doc explaining how to use the role. This is a good place to document what our role does, required variables, and example usage.
+
+![image alt](https://github.com/atulsharmadevops/90DaysOfDevOps/blob/f12d1d232d9d0f4d0a649d98a374c7e57be9a3b0/2026/day-71/Screenshots/Screenshot%20(3686).png)
 
 ### What is the difference between `vars/main.yml` and `defaults/main.yml`?
 | Directory	| Priority | Use Case |
@@ -158,8 +174,8 @@ Think of `defaults` as “suggestions” and `vars` as “enforced values.”
 ### Verification
 - Run `tree roles/webserver` to confirm the skeleton.
 - Open `roles/webserver/defaults/main.yml` and `roles/webserver/vars/main.yml`.
-- (Optional) Try overriding a default in your playbook — it should work.
-- (Optional) Try overriding a var — Ansible will ignore your override, keeping the role’s value.
+- (Optional) Try overriding a default in our playbook — it should work.
+- (Optional) Try overriding a var — Ansible will ignore our override, keeping the role’s value.
 
 ## 3. Build a Custom Webserver Role
 Build a complete `webserver` role from scratch:
@@ -172,6 +188,9 @@ http_port: 80
 app_name: myapp
 max_connections: 512
 ```
+
+![image alt](https://github.com/atulsharmadevops/90DaysOfDevOps/blob/f12d1d232d9d0f4d0a649d98a374c7e57be9a3b0/2026/day-71/Screenshots/Screenshot%20(3692).png)
+
 These are safe defaults. We can override them in playbooks.
 
 ### Write Tasks
@@ -179,7 +198,7 @@ Edit `roles/webserver/tasks/main.yml`:
 ```yaml
 ---
 - name: Install Nginx
-  yum:
+  yum:                                            #use apt if running Ubuntu
     name: nginx
     state: present
 
@@ -218,6 +237,8 @@ Edit `roles/webserver/tasks/main.yml`:
     enabled: true
 ```
 
+![image alt](https://github.com/atulsharmadevops/90DaysOfDevOps/blob/f12d1d232d9d0f4d0a649d98a374c7e57be9a3b0/2026/day-71/Screenshots/Screenshot%20(3694).png)
+
 ### Define Handlers
 Edit `roles/webserver/handlers/main.yml`:
 ```yaml
@@ -228,6 +249,8 @@ Edit `roles/webserver/handlers/main.yml`:
     state: restarted
 ```
 
+![image alt](https://github.com/atulsharmadevops/90DaysOfDevOps/blob/f12d1d232d9d0f4d0a649d98a374c7e57be9a3b0/2026/day-71/Screenshots/Screenshot%20(3697).png)
+
 ### Create Templates
 `roles/webserver/templates/index.html.j2`:
 ```html
@@ -237,6 +260,8 @@ Edit `roles/webserver/handlers/main.yml`:
 <p>Environment: {{ app_env | default('development') }}</p>
 <p>Managed by Ansible</p>
 ```
+
+![image alt](https://github.com/atulsharmadevops/90DaysOfDevOps/blob/f12d1d232d9d0f4d0a649d98a374c7e57be9a3b0/2026/day-71/Screenshots/Screenshot%20(3700).png)
 
 `roles/webserver/templates/vhost.conf.j2`:
 ```jinja
@@ -257,6 +282,8 @@ server {
 }
 ```
 
+![image alt](https://github.com/atulsharmadevops/90DaysOfDevOps/blob/f12d1d232d9d0f4d0a649d98a374c7e57be9a3b0/2026/day-71/Screenshots/Screenshot%20(3703).png)
+
 `roles/webserver/templates/nginx.conf.j2`:
 ```jinja
 # Global Nginx Configuration
@@ -275,6 +302,8 @@ http {
 }
 ```
 
+![image alt](https://github.com/atulsharmadevops/90DaysOfDevOps/blob/f12d1d232d9d0f4d0a649d98a374c7e57be9a3b0/2026/day-71/Screenshots/Screenshot%20(3705).png)
+
 ### Call Role in Playbook
 Create `site.yml`:
 ```yaml
@@ -289,28 +318,42 @@ Create `site.yml`:
         http_port: 80
 ```
 
+![image alt](https://github.com/atulsharmadevops/90DaysOfDevOps/blob/f12d1d232d9d0f4d0a649d98a374c7e57be9a3b0/2026/day-71/Screenshots/Screenshot%20(3775).png)
+
 Run it:
 ```bash
 ansible-playbook site.yml
 ```
+
+![image alt](https://github.com/atulsharmadevops/90DaysOfDevOps/blob/f12d1d232d9d0f4d0a649d98a374c7e57be9a3b0/2026/day-71/Screenshots/Screenshot%20(3710).png)
+![image alt](https://github.com/atulsharmadevops/90DaysOfDevOps/blob/f12d1d232d9d0f4d0a649d98a374c7e57be9a3b0/2026/day-71/Screenshots/Screenshot%20(3714).png)
 
 ### Verification
 Check Nginx service:
 ```bash
 systemctl status nginx
 ```
+
+![image alt](https://github.com/atulsharmadevops/90DaysOfDevOps/blob/f12d1d232d9d0f4d0a649d98a374c7e57be9a3b0/2026/day-71/Screenshots/Screenshot%20(3720).png)
+
 - Should be `active (running)`.
 
 Curl the webserver:
 ```bash
 curl http://<web-server-ip>
 ```
+
+![image alt](https://github.com/atulsharmadevops/90DaysOfDevOps/blob/f12d1d232d9d0f4d0a649d98a374c7e57be9a3b0/2026/day-71/Screenshots/Screenshot%20(3736).png)
+
 - Should return our custom index page with hostname, IP, and environment.
 
 Inspect config:
 ```bash
 cat /etc/nginx/conf.d/terraweek.conf
 ```
+
+![image alt](https://github.com/atulsharmadevops/90DaysOfDevOps/blob/f12d1d232d9d0f4d0a649d98a374c7e57be9a3b0/2026/day-71/Screenshots/Screenshot%20(3750).png)
+
 - Variables (`app_name`, `http_port`) should be rendered.
 
 ## 4. Ansible Galaxy - Use Community Roles
@@ -323,16 +366,25 @@ ansible-galaxy search mysql
 ```
 This queries Galaxy for roles tagged for **Enterprise Linux (EL)** and MySQL. We’ll see community roles with descriptions, author names, and download counts.
 
+![image alt](https://github.com/atulsharmadevops/90DaysOfDevOps/blob/f12d1d232d9d0f4d0a649d98a374c7e57be9a3b0/2026/day-71/Screenshots/Screenshot%20(3753).png)
+![image alt](https://github.com/atulsharmadevops/90DaysOfDevOps/blob/f12d1d232d9d0f4d0a649d98a374c7e57be9a3b0/2026/day-71/Screenshots/Screenshot%20(3757).png)
+
 ### Install a role from Galaxy:
 ```bash
 ansible-galaxy install geerlingguy.docker
 ```
-Example: install Docker role by Jeff Geerling.
+
+![image alt](https://github.com/atulsharmadevops/90DaysOfDevOps/blob/f12d1d232d9d0f4d0a649d98a374c7e57be9a3b0/2026/day-71/Screenshots/Screenshot%20(3763).png)
+
+Example: Install Docker role by Jeff Geerling.
 
 ### Check where it was installed:
 ```bash
 ansible-galaxy list
 ```
+
+![image alt](https://github.com/atulsharmadevops/90DaysOfDevOps/blob/f12d1d232d9d0f4d0a649d98a374c7e57be9a3b0/2026/day-71/Screenshots/Screenshot%20(3769).png)
+
 Confirms the role is installed under `~/.ansible/roles/`.
 
 ### Use the installed role
@@ -345,10 +397,18 @@ Create `docker-setup.yml`:
   roles:
     - geerlingguy.docker
 ```
+
+![image alt](https://github.com/atulsharmadevops/90DaysOfDevOps/blob/f12d1d232d9d0f4d0a649d98a374c7e57be9a3b0/2026/day-71/Screenshots/Screenshot%20(3772).png)
+
 Run:
 ```bash
 ansible-playbook docker-setup.yml
 ```
+
+![image alt](https://github.com/atulsharmadevops/90DaysOfDevOps/blob/f12d1d232d9d0f4d0a649d98a374c7e57be9a3b0/2026/day-71/Screenshots/Screenshot%20(3778).png)
+![image alt](https://github.com/atulsharmadevops/90DaysOfDevOps/blob/f12d1d232d9d0f4d0a649d98a374c7e57be9a3b0/2026/day-71/Screenshots/Screenshot%20(3784).png)
+![image alt](https://github.com/atulsharmadevops/90DaysOfDevOps/blob/f12d1d232d9d0f4d0a649d98a374c7e57be9a3b0/2026/day-71/Screenshots/Screenshot%20(3786).png)
+
 Docker will be installed on our `app` servers with a single role call.
 
 ### Manage Multiple Roles with Requirements File
@@ -363,19 +423,31 @@ roles:
   - name: geerlingguy.ntp
 ```
 
+![image alt](https://github.com/atulsharmadevops/90DaysOfDevOps/blob/f12d1d232d9d0f4d0a649d98a374c7e57be9a3b0/2026/day-71/Screenshots/Screenshot%20(3797).png)
+
 Install all at once:
 ```bash
 ansible-galaxy install -r requirements.yml
 ```
 
+![image alt](https://github.com/atulsharmadevops/90DaysOfDevOps/blob/f12d1d232d9d0f4d0a649d98a374c7e57be9a3b0/2026/day-71/Screenshots/Screenshot%20(3799).png)
+
 ### Verification
 - Run `ansible-galaxy list` → confirm roles installed.
+
+  ![image alt](https://github.com/atulsharmadevops/90DaysOfDevOps/blob/f12d1d232d9d0f4d0a649d98a374c7e57be9a3b0/2026/day-71/Screenshots/Screenshot%20(3804).png)
+
 - Run `ansible-playbook docker-setup.yml` → check Docker service:
     ```bash
     systemctl status docker
     ```
+
+    ![image alt](https://github.com/atulsharmadevops/90DaysOfDevOps/blob/f12d1d232d9d0f4d0a649d98a374c7e57be9a3b0/2026/day-71/Screenshots/Screenshot%20(3808).png)
+
     - Should be `active (running)`.
 - Run `docker --version` → confirms installation.
+
+  ![image alt](https://github.com/atulsharmadevops/90DaysOfDevOps/blob/f12d1d232d9d0f4d0a649d98a374c7e57be9a3b0/2026/day-71/Screenshots/Screenshot%20(3815).png)
 
 ### Why use a `requirements.yml` instead of installing roles manually?
 
@@ -386,10 +458,10 @@ ansible-galaxy install -r requirements.yml
 | Hard to reproduce across environments | Easy to reproduce in CI/CD pipelines |
 | No single source of truth | Acts as a manifest for all required roles |
 
-Think of `requirements.yml` as your **package.json** or **requirements.txt** for Ansible roles - reproducibility and automation are the key benefits.
+Think of `requirements.yml` as our **package.json** or **requirements.txt** for Ansible roles - reproducibility and automation are the key benefits.
 
 ## 5. Ansible Vault - Encrypt Secrets
-**Never store passwords, API keys, or tokens in plain text.** Ansible Vault provides AES-256 encryption for sensitive data within your repository.
+**Never store passwords, API keys, or tokens in plain text.** Ansible Vault provides AES-256 encryption for sensitive data within our repository.
 
 ### Create an encrypted file:
 ```bash
@@ -404,7 +476,11 @@ ansible-vault create group_vars/db/vault.yml
     ```
 - **Save and exit**.
 
+![image alt](https://github.com/atulsharmadevops/90DaysOfDevOps/blob/f12d1d232d9d0f4d0a649d98a374c7e57be9a3b0/2026/day-71/Screenshots/Screenshot%20(3820).png)
+
 If we run `cat group_vars/db/vault.yml`, we’ll see encrypted gibberish - not plain text.
+
+![image alt](https://github.com/atulsharmadevops/90DaysOfDevOps/blob/f12d1d232d9d0f4d0a649d98a374c7e57be9a3b0/2026/day-71/Screenshots/Screenshot%20(3825).png)
 
 ### Manage Vault Files
 Edit an encrypted file:
@@ -412,15 +488,21 @@ Edit an encrypted file:
 ansible-vault edit group_vars/db/vault.yml
 ```
 
+![image alt](https://github.com/atulsharmadevops/90DaysOfDevOps/blob/f12d1d232d9d0f4d0a649d98a374c7e57be9a3b0/2026/day-71/Screenshots/Screenshot%20(3829).png)
+
 View without editing:
 ```bash
 ansible-vault view group_vars/db/vault.yml
 ```
 
+![image alt](https://github.com/atulsharmadevops/90DaysOfDevOps/blob/f12d1d232d9d0f4d0a649d98a374c7e57be9a3b0/2026/day-71/Screenshots/Screenshot%20(3833).png)
+
 Encrypt an existing file:
 ```bash
 ansible-vault encrypt group_vars/db/secrets.yml
 ```
+
+![image alt](https://github.com/atulsharmadevops/90DaysOfDevOps/blob/f12d1d232d9d0f4d0a649d98a374c7e57be9a3b0/2026/day-71/Screenshots/Screenshot%20(3841).png)
 
 ### Use Vault Variables in Playbook
 Create `db-setup.yml`:
@@ -436,10 +518,14 @@ Create `db-setup.yml`:
         msg: "DB password is set: {{ vault_db_password | length > 0 }}"
 ```
 
+![image alt](https://github.com/atulsharmadevops/90DaysOfDevOps/blob/f12d1d232d9d0f4d0a649d98a374c7e57be9a3b0/2026/day-71/Screenshots/Screenshot%20(3845).png)
+
 Run with vault password prompt:
 ```bash
 ansible-playbook db-setup.yml --ask-vault-pass
 ```
+
+![image alt](https://github.com/atulsharmadevops/90DaysOfDevOps/blob/f12d1d232d9d0f4d0a649d98a374c7e57be9a3b0/2026/day-71/Screenshots/Screenshot%20(3849).png)
 
 ### Automate Vault Password Handling (better for CI/CD):
 Instead of typing the password every run:
@@ -450,12 +536,18 @@ Instead of typing the password every run:
     chmod 600 .vault_pass
     echo ".vault_pass" >> .gitignore  # Exclude from version control
     ```
+
+    ![image alt](https://github.com/atulsharmadevops/90DaysOfDevOps/blob/f12d1d232d9d0f4d0a649d98a374c7e57be9a3b0/2026/day-71/Screenshots/Screenshot%20(3853).png)
+
     - Ensures the file is secure and not committed to Git.
 
 Run with file:
 ```bash
 ansible-playbook db-setup.yml --vault-password-file .vault_pass
 ```
+
+![image alt](https://github.com/atulsharmadevops/90DaysOfDevOps/blob/f12d1d232d9d0f4d0a649d98a374c7e57be9a3b0/2026/day-71/Screenshots/Screenshot%20(3855).png)
+
 - Output should show:
     ```Code
     TASK [Show DB password] 
@@ -470,6 +562,8 @@ Or configure in `ansible.cfg`:
 [defaults]
 vault_password_file = .vault_pass
 ```
+
+![image alt](https://github.com/atulsharmadevops/90DaysOfDevOps/blob/f12d1d232d9d0f4d0a649d98a374c7e57be9a3b0/2026/day-71/Screenshots/Screenshot%20(3860).png)
 
 ### Why is `--vault-password-file` better than `--ask-vault-pass` for automated pipelines?
 | --ask-vault-pass | --vault-password-file |
@@ -500,6 +594,9 @@ DB_PORT={{ db_port | default(3306) }}
 DB_PASSWORD={{ vault_db_password }}
 DB_ROOT_PASSWORD={{ vault_db_root_password }}
 ```
+
+![image alt](https://github.com/atulsharmadevops/90DaysOfDevOps/blob/f12d1d232d9d0f4d0a649d98a374c7e57be9a3b0/2026/day-71/Screenshots/Screenshot%20(3863).png)
+
 Secrets are injected from the Vault-encrypted `group_vars/db/vault.yml` at runtime - never stored in plaintext.
 
 ### Write the Unified Playbook
@@ -533,10 +630,18 @@ Create `site.yml`:
         mode: '0600'
 ```
 
+![image alt](https://github.com/atulsharmadevops/90DaysOfDevOps/blob/f12d1d232d9d0f4d0a649d98a374c7e57be9a3b0/2026/day-71/Screenshots/Screenshot%20(3892).png)
+
 ### Run the Playbook
 ```bash
 ansible-playbook site.yml --vault-password-file .vault_pass
 ```
+
+![image alt](https://github.com/atulsharmadevops/90DaysOfDevOps/blob/f12d1d232d9d0f4d0a649d98a374c7e57be9a3b0/2026/day-71/Screenshots/Screenshot%20(3865).png)
+![image alt](https://github.com/atulsharmadevops/90DaysOfDevOps/blob/f12d1d232d9d0f4d0a649d98a374c7e57be9a3b0/2026/day-71/Screenshots/Screenshot%20(3870).png)
+![image alt](https://github.com/atulsharmadevops/90DaysOfDevOps/blob/f12d1d232d9d0f4d0a649d98a374c7e57be9a3b0/2026/day-71/Screenshots/Screenshot%20(3878).png)
+![image alt](https://github.com/atulsharmadevops/90DaysOfDevOps/blob/f12d1d232d9d0f4d0a649d98a374c7e57be9a3b0/2026/day-71/Screenshots/Screenshot%20(3883).png)
+
 Using the password file ensures non‑interactive runs (better for CI/CD).
 
 ### Verification
@@ -544,6 +649,9 @@ Using the password file ensures non‑interactive runs (better for CI/CD).
 ```bash
 curl http://<web-server-ip>
 ```
+
+![image alt](https://github.com/atulsharmadevops/90DaysOfDevOps/blob/f12d1d232d9d0f4d0a649d98a374c7e57be9a3b0/2026/day-71/Screenshots/Screenshot%20(3896).png)
+
 - Custom index page loads with hostname, IP, and environment.
 
 #### App servers:
@@ -551,6 +659,10 @@ curl http://<web-server-ip>
 systemctl status docker
 docker --version
 ```
+
+![image alt](https://github.com/atulsharmadevops/90DaysOfDevOps/blob/f12d1d232d9d0f4d0a649d98a374c7e57be9a3b0/2026/day-71/Screenshots/Screenshot%20(3900).png)
+![image alt](https://github.com/atulsharmadevops/90DaysOfDevOps/blob/f12d1d232d9d0f4d0a649d98a374c7e57be9a3b0/2026/day-71/Screenshots/Screenshot%20(3905).png)
+
 - Docker installed and running.
 
 #### Database servers
@@ -561,6 +673,8 @@ ls -l /etc/db-config.env
 cat /etc/db-config.env
 # Expected: secrets rendered correctly, file owned by root
 ```
+
+![image alt](https://github.com/atulsharmadevops/90DaysOfDevOps/blob/f12d1d232d9d0f4d0a649d98a374c7e57be9a3b0/2026/day-71/Screenshots/Screenshot%20(3909).png)
 
 ## Summary 
 | Concept | What it Solves |
