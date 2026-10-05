@@ -76,6 +76,8 @@ ansible-galaxy init roles/nginx
 ```
 - This generates the standard role layout (`tasks/`, `handlers/`, `templates/`, `defaults/`, etc.) for each role.
 
+![image alt](https://github.com/atulsharmadevops/90DaysOfDevOps/blob/5d255325fcc259bee1b082212dd5ba65893e0424/2026/day-72/Screenshots/Screenshot%20(3982).png)
+
 ### Add Required Templates
 Inside each role, create the templates we’ll need:
 ```bash
@@ -83,6 +85,8 @@ touch roles/docker/templates/docker-compose.yml.j2
 touch roles/nginx/templates/nginx.conf.j2
 touch roles/nginx/templates/app-proxy.conf.j2
 ```
+
+![image alt](https://github.com/atulsharmadevops/90DaysOfDevOps/blob/5d255325fcc259bee1b082212dd5ba65893e0424/2026/day-72/Screenshots/Screenshot%20(3984).png)
 
 ### Populate `ansible.cfg`
 Based on our Day‑68 setup:
@@ -92,9 +96,10 @@ inventory = inventory.ini
 host_key_checking = False
 remote_user = ec2-user        # or ubuntu if using Ubuntu AMI
 private_key_file = ~/your-key.pem
-vault_password_file = .vault_pass
 ```
 - This avoids typing `-i inventory.ini` or `--ask-vault-pass` on every command.
+
+![image alt](https://github.com/atulsharmadevops/90DaysOfDevOps/blob/5d255325fcc259bee1b082212dd5ba65893e0424/2026/day-72/Screenshots/Screenshot%20(3988).png)
 
 ### Populate `inventory.ini`
 Use the IPs from our Day‑68 Terraform outputs:
@@ -115,17 +120,14 @@ ansible_ssh_private_key_file=~/your-key.pem
 - Replace `<WEB_PUBLIC_IP>` etc. with actual values.
 - If Ubuntu AMIs: change `ansible_user` to `ubuntu`.
 
+![image alt](https://github.com/atulsharmadevops/90DaysOfDevOps/blob/5d255325fcc259bee1b082212dd5ba65893e0424/2026/day-72/Screenshots/Screenshot%20(3991).png)
+
 ### Verify Connectivity
 ```bash
 ansible all -m ping
 ```
 
-Expected output:
-```Code
-web-server | SUCCESS => { "ping": "pong" }
-app-server | SUCCESS => { "ping": "pong" }
-db-server  | SUCCESS => { "ping": "pong" }
-```
+![image alt](https://github.com/atulsharmadevops/90DaysOfDevOps/blob/5d255325fcc259bee1b082212dd5ba65893e0424/2026/day-72/Screenshots/Screenshot%20(3994).png)
 
 ## 2. Build the Common Role
 The `common` role runs on every server and establishes a consistent baseline: updated packages, correct timezone, hostname, and a dedicated deploy user.
@@ -168,6 +170,8 @@ cd ansible-docker-project/roles/common/tasks
   tags: common
 ```
 
+![image alt](https://github.com/atulsharmadevops/90DaysOfDevOps/blob/5d255325fcc259bee1b082212dd5ba65893e0424/2026/day-72/Screenshots/Screenshot%20(4072).png)
+
 ### Define Global Variables
 Edit `group_vars/all.yml`:
 ```yaml
@@ -181,11 +185,13 @@ common_packages:
   - wget
   - git
   - htop
-  -
-   tree
+  - tree
   - jq
   - unzip
 ```
+
+![image alt](https://github.com/atulsharmadevops/90DaysOfDevOps/blob/5d255325fcc259bee1b082212dd5ba65893e0424/2026/day-72/Screenshots/Screenshot%20(4047).png)
+
 These variables are referenced in our tasks:
 - `timezone` → used by the timezone module
 - `common_packages` → list of baseline packages
@@ -197,6 +203,8 @@ Run a quick syntax check:
 ansible-playbook site.yml --syntax-check
 ```
 
+![image alt](https://github.com/atulsharmadevops/90DaysOfDevOps/blob/5d255325fcc259bee1b082212dd5ba65893e0424/2026/day-72/Screenshots/Screenshot%20(4046).png)
+
 ### Dry Run the Common Role
 Target all servers with just the common role:
 ```bash
@@ -204,10 +212,17 @@ ansible-playbook site.yml --tags common --check --diff
 ```
 - This shows what would change without actually applying it.
 
+![image alt](https://github.com/atulsharmadevops/90DaysOfDevOps/blob/5d255325fcc259bee1b082212dd5ba65893e0424/2026/day-72/Screenshots/Screenshot%20(4050).png)
+![image alt](https://github.com/atulsharmadevops/90DaysOfDevOps/blob/5d255325fcc259bee1b082212dd5ba65893e0424/2026/day-72/Screenshots/Screenshot%20(4057).png)
+![image alt](https://github.com/atulsharmadevops/90DaysOfDevOps/blob/5d255325fcc259bee1b082212dd5ba65893e0424/2026/day-72/Screenshots/Screenshot%20(4060).png)
+
 ### Full Apply
 ```bash
 ansible-playbook site.yml --tags common
 ```
+
+![image alt](https://github.com/atulsharmadevops/90DaysOfDevOps/blob/5d255325fcc259bee1b082212dd5ba65893e0424/2026/day-72/Screenshots/Screenshot%20(4075).png)
+![image alt](https://github.com/atulsharmadevops/90DaysOfDevOps/blob/5d255325fcc259bee1b082212dd5ba65893e0424/2026/day-72/Screenshots/Screenshot%20(4085).png)
 
 ## 3. Build the Docker Role
 This role installs Docker CE, starts the service, authenticates with Docker Hub, pulls the application image, and runs it as a container.
@@ -223,6 +238,8 @@ docker_app_port: 8080
 docker_container_port: 80
 ```
 - These are our baseline variables. Later we can override them in `group_vars/all.yml` or at runtime via `-e`.
+
+![image alt](https://github.com/atulsharmadevops/90DaysOfDevOps/blob/5d255325fcc259bee1b082212dd5ba65893e0424/2026/day-72/Screenshots/Screenshot%20(4004).png)
 
 ### Write Tasks
 `roles/docker/tasks/main.yml` 
@@ -315,6 +332,8 @@ docker_container_port: 80
   tags: docker
 ```
 
+![image alt](https://github.com/atulsharmadevops/90DaysOfDevOps/blob/5d255325fcc259bee1b082212dd5ba65893e0424/2026/day-72/Screenshots/Screenshot%20(4103).png)
+
 ### Add Handler
 `roles/docker/handlers/main.yml`:
 ```yaml
@@ -325,6 +344,8 @@ docker_container_port: 80
     state: restarted
 ```
 
+![image alt](https://github.com/atulsharmadevops/90DaysOfDevOps/blob/5d255325fcc259bee1b082212dd5ba65893e0424/2026/day-72/Screenshots/Screenshot%20(4012).png)
+
 ### Install Required Collection
 On our control node:
 ```bash
@@ -332,16 +353,24 @@ ansible-galaxy collection install community.docker
 ```
 - This enables the `community.docker` modules used above.
 
+![image alt](https://github.com/atulsharmadevops/90DaysOfDevOps/blob/5d255325fcc259bee1b082212dd5ba65893e0424/2026/day-72/Screenshots/Screenshot%20(4014).png)
+
 ### Dry Run
 Run only the docker role:
 ```bash
 ansible-playbook site.yml --tags docker --check --diff
 ```
 
+![image alt](https://github.com/atulsharmadevops/90DaysOfDevOps/blob/5d255325fcc259bee1b082212dd5ba65893e0424/2026/day-72/Screenshots/Screenshot%20(4104).png)
+![image alt](https://github.com/atulsharmadevops/90DaysOfDevOps/blob/5d255325fcc259bee1b082212dd5ba65893e0424/2026/day-72/Screenshots/Screenshot%20(4245).png)
+
 ### Full Apply
 ```bash
 ansible-playbook site.yml --tags docker
 ```
+
+![image alt](https://github.com/atulsharmadevops/90DaysOfDevOps/blob/5d255325fcc259bee1b082212dd5ba65893e0424/2026/day-72/Screenshots/Screenshot%20(4117).png)
+![image alt](https://github.com/atulsharmadevops/90DaysOfDevOps/blob/5d255325fcc259bee1b082212dd5ba65893e0424/2026/day-72/Screenshots/Screenshot%20(4123).png)
 
 ## 4. Build the Nginx Role
 This role installs Nginx and configures it to proxy incoming HTTP traffic to the running Docker container.
@@ -355,6 +384,8 @@ nginx_upstream_port: 8080
 nginx_server_name: "_"
 ```
 - These variables control the proxy port, upstream container port, and server name.
+
+![image alt](https://github.com/atulsharmadevops/90DaysOfDevOps/blob/5d255325fcc259bee1b082212dd5ba65893e0424/2026/day-72/Screenshots/Screenshot%20(4018).png)
 
 ### Write Tasks
 `roles/nginx/tasks/main.yml`:
@@ -405,6 +436,8 @@ nginx_server_name: "_"
   tags: nginx
 ```
 
+![image alt](https://github.com/atulsharmadevops/90DaysOfDevOps/blob/5d255325fcc259bee1b082212dd5ba65893e0424/2026/day-72/Screenshots/Screenshot%20(4020).png)
+
 ### Add Templates
 `roles/nginx/templates/app-proxy.conf.j2`:
 ```jinja
@@ -440,6 +473,9 @@ server {
 {% endif %}
 }
 ```
+
+![image alt](https://github.com/atulsharmadevops/90DaysOfDevOps/blob/5d255325fcc259bee1b082212dd5ba65893e0424/2026/day-72/Screenshots/Screenshot%20(4024).png)
+
 - We’ll need a main Nginx config template (`roles/nginx/templates/nginx.conf.j2`) to replace the default `/etc/nginx/nginx.conf`. 
   ```jinja
   # Managed by Ansible - Main Nginx Config
@@ -473,6 +509,8 @@ server {
 
   ```
 
+  ![image alt](https://github.com/atulsharmadevops/90DaysOfDevOps/blob/5d255325fcc259bee1b082212dd5ba65893e0424/2026/day-72/Screenshots/Screenshot%20(4160).png)
+
 ### Add Handlers
 `roles/nginx/handlers/main.yml`:
 ```yaml
@@ -488,16 +526,26 @@ server {
     state: restarted
 ```
 
+![image alt](https://github.com/atulsharmadevops/90DaysOfDevOps/blob/5d255325fcc259bee1b082212dd5ba65893e0424/2026/day-72/Screenshots/Screenshot%20(4031).png)
+
 ### Dry Run
 Run only the nginx role:
 ```bash
 ansible-playbook site.yml --tags nginx --check --diff
 ```
 
+![image alt](https://github.com/atulsharmadevops/90DaysOfDevOps/blob/5d255325fcc259bee1b082212dd5ba65893e0424/2026/day-72/Screenshots/Screenshot%20(4136).png)
+![image alt](https://github.com/atulsharmadevops/90DaysOfDevOps/blob/5d255325fcc259bee1b082212dd5ba65893e0424/2026/day-72/Screenshots/Screenshot%20(4141).png)
+![image alt](https://github.com/atulsharmadevops/90DaysOfDevOps/blob/5d255325fcc259bee1b082212dd5ba65893e0424/2026/day-72/Screenshots/Screenshot%20(4143).png)
+![image alt](https://github.com/atulsharmadevops/90DaysOfDevOps/blob/5d255325fcc259bee1b082212dd5ba65893e0424/2026/day-72/Screenshots/Screenshot%20(4158).png)
+
 ### Full Apply
 ```bash
 ansible-playbook site.yml --tags nginx
 ```
+
+![image alt](https://github.com/atulsharmadevops/90DaysOfDevOps/blob/5d255325fcc259bee1b082212dd5ba65893e0424/2026/day-72/Screenshots/Screenshot%20(4161).png)
+![image alt](https://github.com/atulsharmadevops/90DaysOfDevOps/blob/5d255325fcc259bee1b082212dd5ba65893e0424/2026/day-72/Screenshots/Screenshot%20(4166).png)
 
 ## 5. Encrypt Docker Hub Credentials with Vault
 Never store Docker Hub tokens or passwords in plaintext. Ansible Vault encrypts them at rest while making them transparently available to playbooks at runtime.
@@ -507,12 +555,16 @@ Never store Docker Hub tokens or passwords in plaintext. Ansible Vault encrypts 
 ansible-vault create group_vars/web/vault.yml
 ```
 
+![image alt](https://github.com/atulsharmadevops/90DaysOfDevOps/blob/5d255325fcc259bee1b082212dd5ba65893e0424/2026/day-72/Screenshots/Screenshot%20(4033).png)
+
 It will open our editor. Paste in:
 ```yaml
 vault_docker_username: your-dockerhub-username
 vault_docker_password: your-dockerhub-token
 ```
 - **Save and exit**. The file is now AES-256 encrypted - `cat group_vars/web/vault.yml` will show only ciphertext.
+
+  ![image alt](https://github.com/atulsharmadevops/90DaysOfDevOps/blob/5d255325fcc259bee1b082212dd5ba65893e0424/2026/day-72/Screenshots/Screenshot%20(4036).png)
 
 ### Create a Vault Password File
 Instead of typing the vault password every time, store it locally:
@@ -536,11 +588,15 @@ vault_password_file = .vault_pass
 ```
 - Now Ansible will automatically use `.vault_pass` when decrypting vault files.
 
+![image alt](https://github.com/atulsharmadevops/90DaysOfDevOps/blob/5d255325fcc259bee1b082212dd5ba65893e0424/2026/day-72/Screenshots/Screenshot%20(4038).png)
+
 ### Verify Vault Setup
 ```bash
 ansible-vault view group_vars/web/vault.yml
 ```
 - It should prompt for the password (or use `.vault_pass`) and then show our encrypted values.
+
+![image alt](https://github.com/atulsharmadevops/90DaysOfDevOps/blob/5d255325fcc259bee1b082212dd5ba65893e0424/2026/day-72/Screenshots/Screenshot%20(4042).png)
 
 ### Test Docker Login Task
 When we run the **docker role**, the login task will use:
@@ -589,23 +645,43 @@ ansible-playbook site.yml --check --diff
 ```
 - This shows what would change without touching the servers.
 
+![image alt](https://github.com/atulsharmadevops/90DaysOfDevOps/blob/5d255325fcc259bee1b082212dd5ba65893e0424/2026/day-72/Screenshots/Screenshot%20(4175).png)
+![image alt](https://github.com/atulsharmadevops/90DaysOfDevOps/blob/5d255325fcc259bee1b082212dd5ba65893e0424/2026/day-72/Screenshots/Screenshot%20(4179).png)
+![image alt](https://github.com/atulsharmadevops/90DaysOfDevOps/blob/5d255325fcc259bee1b082212dd5ba65893e0424/2026/day-72/Screenshots/Screenshot%20(4182).png)
+
 ### Full Deploy
 Once dry run looks good:
 ```bash
 ansible-playbook site.yml
 ```
 
+![image alt](https://github.com/atulsharmadevops/90DaysOfDevOps/blob/5d255325fcc259bee1b082212dd5ba65893e0424/2026/day-72/Screenshots/Screenshot%20(4185).png)
+![image alt](https://github.com/atulsharmadevops/90DaysOfDevOps/blob/5d255325fcc259bee1b082212dd5ba65893e0424/2026/day-72/Screenshots/Screenshot%20(4187).png)
+![image alt](https://github.com/atulsharmadevops/90DaysOfDevOps/blob/5d255325fcc259bee1b082212dd5ba65893e0424/2026/day-72/Screenshots/Screenshot%20(4189).png)
+
 ### Selective Runs with Tags
 ```bash
 # Run only the Docker role
 ansible-playbook site.yml --tags docker
- 
+```
+
+![image alt](https://github.com/atulsharmadevops/90DaysOfDevOps/blob/5d255325fcc259bee1b082212dd5ba65893e0424/2026/day-72/Screenshots/Screenshot%20(4192).png)
+![image alt](https://github.com/atulsharmadevops/90DaysOfDevOps/blob/5d255325fcc259bee1b082212dd5ba65893e0424/2026/day-72/Screenshots/Screenshot%20(4193).png)
+
+```bash
 # Run only the Nginx role
 ansible-playbook site.yml --tags nginx
- 
+```
+
+![image alt](https://github.com/atulsharmadevops/90DaysOfDevOps/blob/5d255325fcc259bee1b082212dd5ba65893e0424/2026/day-72/Screenshots/Screenshot%20(4197).png)
+
+```bash
 # Skip the common role
 ansible-playbook site.yml --skip-tags common
 ```
+
+![image alt](https://github.com/atulsharmadevops/90DaysOfDevOps/blob/5d255325fcc259bee1b082212dd5ba65893e0424/2026/day-72/Screenshots/Screenshot%20(4201).png)
+![image alt](https://github.com/atulsharmadevops/90DaysOfDevOps/blob/5d255325fcc259bee1b082212dd5ba65893e0424/2026/day-72/Screenshots/Screenshot%20(4205).png)
 
 ### Verification Checklist
 After deployment, confirm everything is working:
@@ -616,6 +692,10 @@ After deployment, confirm everything is working:
 | Nginx reverse proxy |	`curl http://localhost:80` |	Same response, proxied through Nginx |
 | Health endpoint |	`curl http://localhost:80/health` |	Returns `OK` |
 
+![image alt](https://github.com/atulsharmadevops/90DaysOfDevOps/blob/5d255325fcc259bee1b082212dd5ba65893e0424/2026/day-72/Screenshots/Screenshot%20(4207).png)
+![image alt](https://github.com/atulsharmadevops/90DaysOfDevOps/blob/5d255325fcc259bee1b082212dd5ba65893e0424/2026/day-72/Screenshots/Screenshot%20(4210).png)
+![image alt](https://github.com/atulsharmadevops/90DaysOfDevOps/blob/5d255325fcc259bee1b082212dd5ba65893e0424/2026/day-72/Screenshots/Screenshot%20(4212).png)
+![image alt](https://github.com/atulsharmadevops/90DaysOfDevOps/blob/5d255325fcc259bee1b082212dd5ba65893e0424/2026/day-72/Screenshots/Screenshot%20(4214).png)
 
 ### Idempotency Check
 Run the playbook again:
@@ -623,6 +703,10 @@ Run the playbook again:
 ansible-playbook site.yml
 ```
 Almost all tasks should report `ok` with minimal `changed` - confirming the automation is fully idempotent.
+
+![image alt](https://github.com/atulsharmadevops/90DaysOfDevOps/blob/5d255325fcc259bee1b082212dd5ba65893e0424/2026/day-72/Screenshots/Screenshot%20(4221).png)
+![image alt](https://github.com/atulsharmadevops/90DaysOfDevOps/blob/5d255325fcc259bee1b082212dd5ba65893e0424/2026/day-72/Screenshots/Screenshot%20(4223).png)
+![image alt](https://github.com/atulsharmadevops/90DaysOfDevOps/blob/5d255325fcc259bee1b082212dd5ba65893e0424/2026/day-72/Screenshots/Screenshot%20(4225).png)
 
 ## 7. Bonus - Deploy a Different App and Re-Run
 ### Override Docker Variables
@@ -635,10 +719,16 @@ ansible-playbook site.yml --tags docker \
 - `docker_app_name=apache-app` → container name changes.
 - **Nginx config** → unchanged, still proxies port 8080 → 80.
 
+![image alt](https://github.com/atulsharmadevops/90DaysOfDevOps/blob/5d255325fcc259bee1b082212dd5ba65893e0424/2026/day-72/Screenshots/Screenshot%20(4229).png)
+![image alt](https://github.com/atulsharmadevops/90DaysOfDevOps/blob/5d255325fcc259bee1b082212dd5ba65893e0424/2026/day-72/Screenshots/Screenshot%20(4230).png)
+
 ### Verify Replacement
 ```bash
 docker ps
 ```
+
+![image alt](https://github.com/atulsharmadevops/90DaysOfDevOps/blob/5d255325fcc259bee1b082212dd5ba65893e0424/2026/day-72/Screenshots/Screenshot%20(4232).png)
+
 Expected:
 - Old `myapp` container gone.
 - New `apache-app` container running on port `8080:80`.
@@ -649,6 +739,10 @@ Now run everything:
 ansible-playbook site.yml
 ```
 - Output should show mostly **ok** with minimal **changed** - proving idempotency.
+
+![image alt](https://github.com/atulsharmadevops/90DaysOfDevOps/blob/5d255325fcc259bee1b082212dd5ba65893e0424/2026/day-72/Screenshots/Screenshot%20(4235).png)
+![image alt](https://github.com/atulsharmadevops/90DaysOfDevOps/blob/5d255325fcc259bee1b082212dd5ba65893e0424/2026/day-72/Screenshots/Screenshot%20(4236).png)
+![image alt](https://github.com/atulsharmadevops/90DaysOfDevOps/blob/5d255325fcc259bee1b082212dd5ba65893e0424/2026/day-72/Screenshots/Screenshot%20(4238).png)
 
 ### Reflection & Documentation
 #### Task Count
@@ -678,5 +772,8 @@ Terraform:
 ```bash
 terraform destroy
 ```
+
+![image alt](https://github.com/atulsharmadevops/90DaysOfDevOps/blob/5d255325fcc259bee1b082212dd5ba65893e0424/2026/day-72/Screenshots/Screenshot%20(4244).png)
+
 Manual EC2: terminate from AWS console.
 
