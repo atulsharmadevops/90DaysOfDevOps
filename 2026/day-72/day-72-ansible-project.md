@@ -61,7 +61,7 @@ touch ansible.cfg inventory.ini site.yml
 ### Create Group Variables Directories & Files
 ```bash
 mkdir -p group_vars/web
-touch group_vars/all.yml group_vars/web/vars.yml group_vars/web/vault.yml
+touch group_vars/all.yml group_vars/web/vars.yml
 ```
 - **all.yml** → common variables (timezone, project name, packages).
 - **vars.yml** → Nginx‑specific variables (server_name, ports).
@@ -171,6 +171,13 @@ cd ansible-docker-project/roles/common/tasks
 ```
 
 ![image alt](https://github.com/atulsharmadevops/90DaysOfDevOps/blob/5d255325fcc259bee1b082212dd5ba65893e0424/2026/day-72/Screenshots/Screenshot%20(4072).png)
+
+- The `wheel` group is a RHEL/CentOS/Fedora convention. Our hosts are running Ubuntu/Debian (we're using `apt`), where the admin group is `sudo`.
+- Also added `append: true`. Without it, `groups:` replaces the user's supplementary groups instead of adding to them. It doesn't matter much for a brand-new user, but it's the safer habit.
+- If we want this role to work on both Debian-family and RedHat-family hosts, we can pick the group dynamically:
+  ```yaml
+  groups: "{{ 'sudo' if ansible_os_family == 'Debian' else 'wheel' }}"
+  ```
 
 ### Define Global Variables
 Edit `group_vars/all.yml`:
@@ -510,6 +517,8 @@ server {
   ```
 
   ![image alt](https://github.com/atulsharmadevops/90DaysOfDevOps/blob/5d255325fcc259bee1b082212dd5ba65893e0424/2026/day-72/Screenshots/Screenshot%20(4160).png)
+  - `user nginx;` will break `nginx -t`. Ubuntu's nginx package runs as `www-data` and no `nginx` user exists.
+  - The `pid` path changes to `/run/nginx.pid` as well, because that's where Ubuntu's systemd unit expects it.
 
 ### Add Handlers
 `roles/nginx/handlers/main.yml`:
