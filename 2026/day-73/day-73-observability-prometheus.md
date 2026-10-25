@@ -415,17 +415,6 @@ node_memory_MemAvailable_bytes / 1024 / 1024
 ```
  
 > **Note:** Not all applications expose Prometheus metrics natively. Exporters such as Node Exporter and cAdvisor, and the OpenTelemetry Collector, translate metrics from systems that don't have built-in Prometheus support.
- 
-### Troubleshooting
- 
-| Symptom | Likely cause | Fix |
-|---|---|---|
-| Target missing after editing `prometheus.yml` | Prometheus not restarted | `docker compose restart prometheus` |
-| Target DOWN, `404 Not Found` | App has no `/metrics` endpoint | Use an exporter or an instrumented app |
-| Target DOWN, `connection refused` | Wrong port or container not running | Check `docker compose ps` and the port in `prometheus.yml` |
-| `mapping key "command" already defined` | Duplicate `command:` key in the compose file | Keep one `command:` list |
- 
----
 
 ## 6. Explore Data Retention and Storage
 Understand how Prometheus stores data:
