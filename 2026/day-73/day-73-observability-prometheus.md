@@ -161,7 +161,7 @@ A **time series** is a unique combination of a metric name and a set of labels. 
 
 ### Open Prometheus Graph UI
 - Go to: http://localhost:9090/graph
-- This is the query interface where we can run PromQL queries and visualize results.
+- This is the query interface where we can run [PromQL](docs/promql-guide.md) queries and visualize results.
 
 We should see a text box for queries and options to view results as a graph or table.
 
