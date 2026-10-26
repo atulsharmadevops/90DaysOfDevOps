@@ -256,6 +256,7 @@ rate(prometheus_http_requests_total[5m])
 
   ![image alt](https://github.com/atulsharmadevops/90DaysOfDevOps/blob/13df300e6657d446030231a3815d9aa60bef1978/2026/day-73/Screenshots/Screenshot%20(4466).png)
   ![image alt](https://github.com/atulsharmadevops/90DaysOfDevOps/blob/13df300e6657d446030231a3815d9aa60bef1978/2026/day-73/Screenshots/Screenshot%20(4469).png)
+  ![image alt](https://github.com/atulsharmadevops/90DaysOfDevOps/blob/65b65ce017b93a224124740f28f34bda9a6c534c/2026/day-73/Screenshots/Screenshot%20(4700).png)
 
 #### 4. Aggregation
 ```promql
@@ -383,6 +384,8 @@ Why the extra restart? `docker compose up -d` only recreates containers whose Co
  
 Run `docker ps`. We should see both `prometheus` and `node-exporter` running.
 
+![image alt](https://github.com/atulsharmadevops/90DaysOfDevOps/blob/65b65ce017b93a224124740f28f34bda9a6c534c/2026/day-73/Screenshots/Screenshot%20(4702).png)
+
 ### Verify in Prometheus UI
 - Open http://localhost:9090 **→ Status > Targets**.
 - We should now see **two targets**:
@@ -401,19 +404,31 @@ Confirm Node Exporter is serving metrics:
 curl -s localhost:9100/metrics | head -n 10
 ```
  
+![image alt](https://github.com/atulsharmadevops/90DaysOfDevOps/blob/65b65ce017b93a224124740f28f34bda9a6c534c/2026/day-73/Screenshots/Screenshot%20(4711).png)
+
 Then try these queries in the Graph UI (`http://localhost:9090/graph`):
  
 ```
 # Is each target healthy? (1 = up, 0 = down)
 up
- 
+```
+
+![image alt](https://github.com/atulsharmadevops/90DaysOfDevOps/blob/65b65ce017b93a224124740f28f34bda9a6c534c/2026/day-73/Screenshots/Screenshot%20(4715).png)
+
+```
 # Available memory in MB
 node_memory_MemAvailable_bytes / 1024 / 1024
- 
+```
+
+![image alt](https://github.com/atulsharmadevops/90DaysOfDevOps/blob/65b65ce017b93a224124740f28f34bda9a6c534c/2026/day-73/Screenshots/Screenshot%20(4721).png)
+
+```
 # CPU usage in percent, averaged over 5 minutes
 100 - (avg(rate(node_cpu_seconds_total{mode="idle"}[5m])) * 100)
 ```
- 
+
+![image alt](https://github.com/atulsharmadevops/90DaysOfDevOps/blob/65b65ce017b93a224124740f28f34bda9a6c534c/2026/day-73/Screenshots/Screenshot%20(4725).png)
+
 > **Note:** Not all applications expose Prometheus metrics natively. Exporters such as Node Exporter and cAdvisor, and the OpenTelemetry Collector, translate metrics from systems that don't have built-in Prometheus support.
  
 ### Troubleshooting
